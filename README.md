@@ -116,3 +116,4 @@ In [logbook.css](logbook.css) logbook.css
 * couleurs
 * tailles et indentations
 
+![Example](https://raw.githubusercontent.com/GarenKreiz/Geocaching-Journal/master/logbook_example.jpg)
