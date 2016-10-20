@@ -212,7 +212,7 @@ class Logbook:
                 if not os.path.isfile(dir+l):
                     if not os.path.isdir(dir):
                         print "Creating directory "+dir
-                        os.mkdir(dir)
+                        os.makedirs(dir)
                     url = 'http://www.geocaching.com/seek/log.aspx?LUID='+l
                     data = urllib2.urlopen(url).read()
                     print "Saving log file "+l
