@@ -34,8 +34,9 @@ import locale
 import urllib2
 import datetime
 
-locale.setlocale(locale.LC_ALL, 'fr_FR.UTF-8')
 os.environ['LC_ALL'] = 'fr_FR.UTF-8'
+#locale.setlocale(locale.LC_ALL, 'fr_FR.UTF-8')
+locale.setlocale(locale.LC_ALL, '')
 
 # title and description of the logbook
 bookTitle="""Journal de géocaching<br/>Eté 2016"""
