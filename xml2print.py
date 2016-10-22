@@ -1,5 +1,5 @@
-#! python
-# -*- coding: latin-1 -*-
+#!python
+# -*- coding: utf-8 -*-
 ################################################################################
 # xml2print.py
 #
@@ -256,6 +256,7 @@ def processFile(fichier):
             else:
                 print '!!!!!!!!!!!!! Bad image format:', line
             if not processingImages or type == '<pano>':
+                flushImgTable()
                 maxWidth= { 'H':0, 'V':0, 'P':0 }
                 pictures = []
                 nbCommentRows = 0
@@ -265,7 +266,6 @@ def processFile(fichier):
             processingImages = True
             if type == '<pano>':
                 pictures.append(('P',image,comment,width,height))
-                flushImgTable()
             elif height == '640':
                 maxWidth['V'] = max(maxWidth['V'], len(comment))
                 pictures.append(('V',image,comment,width,height))
@@ -277,8 +277,7 @@ def processFile(fichier):
                 pictures.append(('P',image,comment,width,height))
             else:
                 pictures.append(('H',image,comment,width,height))                
-            rowCount += 1
-            
+            rowCount += 1        
         else:
             # end of the table of images
             if processingImages:
