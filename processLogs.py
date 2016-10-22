@@ -74,13 +74,13 @@ class Logbook:
         self.fNameOutput = fNameOutput
 
     # analyses the HTML content of a log page
-    def parseLog(self,data,d,l,c,t,s):
+    def parseLog(self,data,day,logID,cacheID,title,status):
         text = ''
         images = {}
-        #print 'Log:',l,c,t,s
+        #print 'Log:',logID,cacheID,title,status
         
-        self.fXML.write('<post>%s | http://www.geocaching.com/seek/cache_details.aspx?guid=%s |'%(t,c))
-        self.fXML.write('%s | http://www.geocaching.com/seek/log.aspx?LUID=%s</post>\n'%(s,l))
+        self.fXML.write('<post>%s | http://www.geocaching.com/seek/cache_details.aspx?guid=%s |'%(title,cacheID))
+        self.fXML.write('%s | http://www.geocaching.com/seek/log.aspx?LUID=%s</post>\n'%(status,logID))
                    
         tBegin = data.find('_LogText">')
         if tBegin > 0:
@@ -96,8 +96,7 @@ class Logbook:
         #g = data.find('_GalleryList"',tEnd)
         g = data.find('LogImagePanel',tEnd)
         if g > 0:
-            p = g
-            p = data.find('<img ',p+1)
+            p = data.find('<img ',g+1)
             while p > 0:
                 # finding the URL of the image
                 sBegin = data.find('src="',p)
@@ -106,39 +105,39 @@ class Logbook:
                 if not re.search('cache/log',src):
                     print '!!!! Bad image:',src
                     continue
-                # normalize form : http://img.geocaching.com/cache/log/display/*.jpg
                 
-                # src = re.sub('.*(thumb|display)','Images',src)   # to use if there is a local cache of images
-                src = re.sub('thumb','display',src)                # to use to access images on geocaching site
+                # normalize form : http://img.geocaching.com/cache/log/display/*.jpg  
+                src = re.sub('.*(thumb|display)','Images',src)   # to use if there is a local cache of images
+                #src = re.sub('thumb','display',src)                # to use to access images on geocaching site
 
-                # finding the title of the image
+                # finding the caption of the image
                 patternB = re.compile('<(small|span|strong)[^>]*>')
                 patternE = re.compile('</(small|span|strong)[^>]*>')
                 searchResult = patternB.search(data,sEnd)
                 tBegin = searchResult.end()                  # begin of tag
                 tEnd = patternE.search(data,tBegin).start()  # end of tag
-                title = re.sub('<[^>]*>','',data[tBegin:tEnd])
-                if title.find('Click image to view original') <> -1:
+                caption = re.sub('<[^>]*>','',data[tBegin:tEnd])
+                if caption.find('Click image to view original') <> -1:
                     searchResult = patternB.search(data,tEnd+2)
                     tBegin = searchResult.end()                 # begin of tag
                     tEnd = patternE.search(data,tBegin).start()  # end of tag
-                    title = re.sub('<[^>]*>','',data[tBegin:tEnd])
-                title = title.strip(' \n\r\t')
+                    caption = re.sub('<[^>]*>','',data[tBegin:tEnd])
+                caption = caption.strip(' \n\r\t')
                 
-                # images with "panorama" or "panoramique" in the title are supposed to be wide pictures
-                if re.search('panoram', title, re.IGNORECASE):
-                    if not (src,title) in listPanoramas:
-                        listPanoramas.append((src,title))
+                # images with "panorama" or "panoramique" in the captin are supposed to be wide pictures
+                if re.search('panoram', caption, re.IGNORECASE):
+                    if not (src,caption) in listPanoramas:
+                        listPanoramas.append((src,caption))
                 else:
                     if not src in listImages:
                         # at this point, no information is available on the size of image
                         # assume a standard format 640x480 (nostalgia of the 80's?)
-                        self.fXML.write("<image>%s<height>480</height><width>640</width><comment>%s</comment></image>\n"%(src,title))
+                        self.fXML.write("<image>%s<height>480</height><width>640</width><comment>%s</comment></image>\n"%(src,caption))
                         listImages.append(src)
                 try:
-                    images[l].append((src,title))
+                    images[logID].append((src,caption))
                 except:
-                    images[l] = ((src,title))
+                    images[logID] = ((src,caption))
                     
                 # goto next image
                 p = data.find('<img alt=',p+1)
@@ -146,14 +145,14 @@ class Logbook:
             # panoramas are displayed after the other images
             # each on a separate line
             if listPanoramas <> []:
-                for (src,title) in listPanoramas:
-                    self.fXML.write("<pano>%s<height>480</height><width>640</width><comment>%s</comment></pano>\n"%(src,title))
+                for (src,caption) in listPanoramas:
+                    self.fXML.write("<pano>%s<height>480</height><width>640</width><comment>%s</comment></pano>\n"%(src, caption))
 
         # identifying logs without image            
         try:
-            foo = images[l][0]
+            foo = images[logID][0]
         except:
-            print "!!!! Log without image:",l,d,t
+            print "!!!! Log without image:",logID,day,title,'>>>',status
 
 
     # analyse of the HTML page with all the logs of the geocacher
