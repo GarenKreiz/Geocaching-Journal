@@ -136,7 +136,7 @@ fOut = None
 
 # cleaning text from HTML formatting
 def cleanText(buffer,all=True):
-    resu = re.sub('</*(br|tbody|table|div|text)[ /]*>',' ',buffer)
+    resu = re.sub('</*(tbody|table|div|text)[ /]*>',' ',buffer)
     resu = re.sub('</*div>'                      ,'',resu)
     resu = re.sub('<div[^>]*>'                   ,'',resu)
     resu = re.sub('[\n\r]*'                      ,'',resu)
@@ -227,11 +227,12 @@ def processFile(fichier):
     
     rowCount = 0
     
+    print "Processing",fichier
     f = open(fichier,'r')
     text = None
     
     fOut.write(headerStart)
-
+    
     l = f.readline().strip()
     while l <> '':
         # analyse of the XML tag
@@ -391,28 +392,37 @@ def processFile(fichier):
     fOut.write(htmlEnd)
     
     
-def main():
-    global fOut, printing
-
-    try:
-        if sys.argv[3] == '-p' or sys.argv[3] == '--printing':
-            # generation for printing
-            printing = True
-    except:
-        printing = False
+def xml2print(xmlInput, htmlOutput, printing=False):
+    global fOut
     
-    fOut = open(sys.argv[2],'w')
-    result = processFile(sys.argv[1])
+    fOut = open(htmlOutput,'w')
+    result = processFile(xmlInput)
     fOut.close()
-    print "Result file:",sys.argv[2]
+    print "Result file:",htmlOutput
     print "That's all, folks!"
     
 
 if __name__ == "__main__":
     def usage():
         print 'Usage: python xml2print.py logbook.xml logbook.html [-p|--printing]'
-        
-    if len(sys.argv) > 2:
-        main()
+        sys.exit()
+    
+    import getopt
+    try:
+        opts, args = getopt.getopt(sys.argv[1:],"p", ['printing'])
+    except getopt.GetoptError:
+        usage()
+
+    printing = False
+    for opt, arg in opts:
+      if opt == '-h':
+          usage()
+      elif opt == "-p":
+          printing = True
+
+    if len(args) == 2:
+        xml2print(args[0],args[1],printing)
     else:
         usage()
+
+    
