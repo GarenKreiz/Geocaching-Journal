@@ -76,10 +76,10 @@ h2.date-header {
 }
 .post-title {
     font: 20px Arial,Tahoma,Helvetica,FreeSans,sans-serif;
-    margin: 10px 0px 30px 0px;
+    margin: 4px 0px 20px 0px;
 }
 .post-banner {
-    margin: 14px 14px 0px;
+    margin: 14px 18px 0px;
     padding: 8px;
     color: background: rgb(230, 145, 56);
     #background:url('logbook.jpg');
@@ -96,12 +96,8 @@ h2.date-header {
     clear: both;
 }
 .table-pictures {
-    margin: 0 auto; 
+    margin: 0 auto;
     text-align: center;
-}
-.table-pictures.td {
-    margin: auto;
-    width: 33%;
 }
 .picture {
     background: rgb(0,0,0); 
