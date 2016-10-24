@@ -68,11 +68,12 @@ def formatDate(date):
 
 class Logbook:
 
-    def __init__(self, fNameInput, fNameOutput="logbook.xml", verbose=True):
+    def __init__(self, fNameInput, fNameOutput="logbook.xml", verbose=True, localImages=False):
         self.fIn = open(fNameInput,'r')
         self.fXML = open(fNameOutput,"w")
         self.fNameOutput = fNameOutput
         self.verbose = verbose
+        self.localImages = localImages
 
     # analyses the HTML content of a log page
     def parseLog(self,data,day,logID,cacheID,title,status):
@@ -107,9 +108,11 @@ class Logbook:
                     print '!!!! Bad image:',src
                     continue
                 
-                # normalize form : http://img.geocaching.com/cache/log/display/*.jpg  
-                src = re.sub('.*(thumb|display)','Images',src)   # to use if there is a local cache of images
-                #src = re.sub('thumb','display',src)                # to use to access images on geocaching site
+                # normalize form : http://img.geocaching.com/cache/log/display/*.jpg
+                if self.localImages:
+                    src = re.sub('.*(thumb|display)','Images',src)     # to use if there is a local cache of images
+                else:
+                    src = re.sub('thumb','display',src)                # to use to access images on geocaching site
 
                 # finding the caption of the image
                 patternB = re.compile('<(small|span|strong)[^>]*>')
@@ -233,7 +236,7 @@ class Logbook:
 
 if __name__=='__main__':
     def usage():
-          print 'Usage: python processLogs.py [-q|--quiet] geocaching_logs.html logbook.xml'
+          print 'Usage: python processLogs.py [-q|--quiet] [-l|--local-images] geocaching_logs.html logbook.xml'
           print ''
           print '   geocaching_logs.html'
           print '       dump of the web page containing all you logs (HTML only)'
@@ -241,24 +244,34 @@ if __name__=='__main__':
           print '   logbook.xml'
           print '       content of all log entries with reference to pictures'
           print '       contenu de tous les logs avec références aux images'
+          print '   -q|--quiet'
+          print '       less verbose console output'
+          print '       exécution du programme moins verbeuse'
+          print '   -l|--local-images'
+          print '       use local images in directory Images (previously downloaded for example using "wget")'
+          print '       utilisation d\'une copie locale des images dans le répertoire Images (téléchargées par exemple avec "wget")'
+          
           sys.exit()
 
     import getopt
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:],"hq", ['help','quiet'])
+        opts, args = getopt.getopt(sys.argv[1:],"hql", ['help','quiet','local-images'])
     except getopt.GetoptError:
         usage()
 
     verbose = True
+    localImages = False
     for opt, arg in opts:
       if opt == '-h':
           usage()
       elif opt == "-q":
           verbose = False
+      elif opt == "-l":
+          localImages = True
 
     if len(args) == 2:
-        Logbook(args[0],args[1],verbose).processLogs()
+        Logbook(args[0],args[1],verbose,localImages).processLogs()
         print "That's all folks!"
     else:
         usage()
