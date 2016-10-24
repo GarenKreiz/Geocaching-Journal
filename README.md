@@ -8,15 +8,17 @@ Generation of a journal of geocaching logs
 * generation of XML files containing logs and list of pictures
 * download a backup of the logs' web pages
 * customization of HTML output with CSS styles or inside scripts
+* identification of logs without pictures
 * require no external modules
 
 These scripts were tested on Python 2.7.
 
 ## Usage
 
-* Save locally the content of the web page https://www.geocaching.com/my/logs.aspx?s=1 , for example in file **geocaching_logs.html**
-* Run the [processLogs.py](processLogs.py) script to generate an XML file **logbook.xml**
+* Save locally the content of the web page https://www.geocaching.com/my/logs.aspx?s=1 , for example in file **geocaching_logs.html**.
+* Run the [processLogs.py](processLogs.py) script to generate an XML file **logbook.xml**.
 * It create a directory Logs to cache the logs' HTML page before parsing them.
+* Warning: the script may generate lots of access to www.geocaching.com without timeout. Check the License Agreement of this web site.
 
 ```
 $ python processLogs.py geocaching_logs.html logbook.xml
@@ -67,6 +69,7 @@ Generation d'un journal des notes de géocaching
 
 * génération d'un fichier XML  contenant le texte des notes et la liste des images
 * téléchargement d'une sauvegarde locale des pages web des notes
+* identifiation des notes sans photo
 * paramétrisation du fichier HTML généré avec des styles CSS ou par modification des scripts
 
 Ces scripts ont été testé avec Python 2.7
@@ -76,7 +79,7 @@ Ces scripts ont été testé avec Python 2.7
 * Faire une sauvegarde locale de la page contenant tous vos logs https://www.geocaching.com/my/logs.aspx?s=1 , par exemple dans le fichier **geocaching_logs.html**
 * Lancer le script [processLogs.py](processLogs.py) pour généré un fichier XML **logbook.xml**
 * Cela crée un répertoire **Logs** contenant un cache des descriptions HTML des notes
-
+* Note: le script engrendre une rafale de requêtes vers www.geocaching.com sans temporisation. Vérifiez les clauses d'utilisation de ce site web.
 ```
 $ python processLogs.py geocaching_logs.html logbook.xml
 ```
@@ -115,5 +118,7 @@ In [logbook.css](logbook.css) logbook.css
 * image de fond
 * couleurs
 * tailles et indentations
+
+# Sample - Echantillon
 
 ![Example](https://raw.githubusercontent.com/GarenKreiz/Geocaching-Journal/master/logbook_example.jpg)

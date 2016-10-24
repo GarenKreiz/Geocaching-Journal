@@ -399,17 +399,16 @@ def xml2print(xmlInput, htmlOutput, printing=False):
     result = processFile(xmlInput)
     fOut.close()
     print "Result file:",htmlOutput
-    print "That's all, folks!"
     
 
 if __name__ == "__main__":
     def usage():
-        print 'Usage: python xml2print.py logbook.xml logbook.html [-p|--printing]'
+        print 'Usage: python xml2print.py [-p|--printing] logbook.xml logbook.html'
         sys.exit()
     
     import getopt
     try:
-        opts, args = getopt.getopt(sys.argv[1:],"p", ['printing'])
+        opts, args = getopt.getopt(sys.argv[1:],"hp", ['help','printing'])
     except getopt.GetoptError:
         usage()
 
@@ -422,6 +421,7 @@ if __name__ == "__main__":
 
     if len(args) == 2:
         xml2print(args[0],args[1],printing)
+        print "That's all, folks!"
     else:
         usage()
 

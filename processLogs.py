@@ -68,10 +68,11 @@ def formatDate(date):
 
 class Logbook:
 
-    def __init__(self,fNameInput,fNameOutput="logbook.xml"):
+    def __init__(self, fNameInput, fNameOutput="logbook.xml", verbose=True):
         self.fIn = open(fNameInput,'r')
         self.fXML = open(fNameOutput,"w")
         self.fNameOutput = fNameOutput
+        self.verbose = verbose
 
     # analyses the HTML content of a log page
     def parseLog(self,data,day,logID,cacheID,title,status):
@@ -196,7 +197,8 @@ class Logbook:
             else:
                 print "=========================================", resu
             
-            print "%s|%s|%s|%s|%s"%(idLog,dateLog,cacheLog,nameLog,typeLog)
+            if self.verbose:
+                print "%s|%s|%s|%s|%s"%(idLog,dateLog,cacheLog,nameLog,typeLog)
 
         dates = days.keys()
         dates.sort()
@@ -230,12 +232,35 @@ class Logbook:
         print 'Result file:', self.fNameOutput 
 
 if __name__=='__main__':
-      def usage():
-          print 'Usage: python processLogs.py geocaching_logs.html logbook.xml'
+    def usage():
+          print 'Usage: python processLogs.py [-q|--quiet] geocaching_logs.html logbook.xml'
           print ''
-          print '   where geocaching_log.html is a dump of the web page containing all you logs'
-          
-      if len(sys.argv) == 3:
-          Logbook(sys.argv[1],sys.argv[2]).processLogs()
-      else:
+          print '   geocaching_logs.html'
+          print '       dump of the web page containing all you logs (HTML only)'
+          print '       sauvegarde de la page contenant tous vos logs (HTML uniquement)'
+          print '   logbook.xml'
+          print '       content of all log entries with reference to pictures'
+          print '       contenu de tous les logs avec références aux images'
+          sys.exit()
+
+    import getopt
+
+    try:
+        opts, args = getopt.getopt(sys.argv[1:],"hq", ['help','quiet'])
+    except getopt.GetoptError:
+        usage()
+
+    verbose = True
+    for opt, arg in opts:
+      if opt == '-h':
           usage()
+      elif opt == "-q":
+          verbose = False
+
+    if len(args) == 2:
+        Logbook(args[0],args[1],verbose).processLogs()
+        print "That's all folks!"
+    else:
+        usage()
+        
+          
