@@ -287,12 +287,11 @@ def processFile(fichier):
             l = re.sub('</*title>','',l)
             fOut.write('<title>%s</title>\n' % cleanText(l,True))
             title = l.split('|')
-            print title, l, len(title), title[0]
             if len(title) == 2:
-                print "URL", title[1]
+                # the title has 2 parts : a text | an URL
                 titleText = '<a href="%s" target="_blank">%s</a>' % (title[1],title[0])
             else:
-                titleText = cleanText(title[0],True)
+                titleText = title[0]
             fOut.write(headerMiddle % titleText)
             
         elif type == '<description>':
