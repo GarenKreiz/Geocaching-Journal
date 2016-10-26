@@ -135,6 +135,8 @@ class Logbook:
                 
                 # images with "panorama" or "panoramique" in the captin are supposed to be wide pictures
                 if re.search('panoram', caption, re.IGNORECASE):
+                    src = re.sub('/log/display/','/log/',src)     # use full size image for panorama
+                    
                     if not (src,caption) in listPanoramas:
                         listPanoramas.append((src,caption))
                 else:
