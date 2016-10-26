@@ -44,15 +44,30 @@ $  firefox logbook.html
 $ python processLogs.py geocaching_logs.html logbook.html
 ```
 
+* Before launching the executable versions, copy the files [logbook_header.xml](logbook_header.xml) and [logbook.css](logbook.css) to the working directory and customize them.
+
+```
+\ processLogs.exe geocaching_logs.html logbook.html
+```
+or 
+```
+\ processLogs.exe geocaching_logs.html logbook.xml
+\ xml2print.exe logbook.xml logbook.html
+```
+
 ## Customization
 
 In [processLogs.py](processLogs.py)
 
-* title of the output page
-* description of the journal
+
 * string to match to classify a picture as a panorama (currently captions with "panoram")
 
-In XML file
+In file [logbook_header.xml](logbook_header.xml)
+
+* title of generated document and an optional URL to a web site
+* description of the journal
+
+In the generated XML file
 
 * insertion of new page markers <page/> for improving the layout of the printing version
 
@@ -78,7 +93,7 @@ Generation d'un journal des notes de géocaching
 * identification des notes sans photo
 * paramétrisation du fichier HTML généré avec des styles CSS ou par modification des scripts
 
-Ces scripts ont été testé avec Python 2.7
+Ces scripts ont été testés avec Python 2.7
 
 ## Usage
 
@@ -104,23 +119,44 @@ $ python xml2print.py logbook.xml logbook.html
 $  firefox logbook.html
 ```
 
+* Il est possible d'enchaîner les deux étapes en spécifiant un fichier de sortie en HTML.
+
+```
+$ python processLogs.py geocaching_logs.html logbook.html
+```
+
+* Avant d'exécuter les versions binaires des programmes (Windows), copier les fichiers [logbook_header.xml](logbook_header.xml) and [logbook.css](logbook.css) dans le répertoire de travail puis éventuellement en modifier le contenu pour paramétrer la génération.
+
+```
+\ processLogs.exe geocaching_logs.html logbook.html
+```
+ou
+```
+\ processLogs.exe geocaching_logs.html logbook.xml
+\ xml2print.exe logbook.xml logbook.html
+```
+
 ## Paramétrage
 
-In [processLogs.py](processLogs.py)
+Dans le fichier [processLogs.py](processLogs.py)
 
-* titre du journal
-* description ou introduction du journal
 * chaîne de caractère permettant de reconnaître les photos en mode panorama (actuellement "panoram" dans la légende)
 
-In XML file
+Dans le fichier [logbook_header.xml](logbook_header.xml)
+
+* titre du journal et éventuellement l'URL du lien vers un site web
+* description ou introduction du journal
+
+Dans le fichier XML généré
 
 * insertion de sauts de page pour améliorer l'impression  <page/>
+* modification du pied de page
 
-In [xml2print.py](xml2print.py) 
+Dans le fichier [xml2print.py](xml2print.py) 
 
 * disposition en colonnes des photos
 
-In [logbook.css](logbook.css) logbook.css
+Dans le fichier [logbook.css](logbook.css)
 
 * image de fond : option url("image distante ou sur le web")
 * couleurs
