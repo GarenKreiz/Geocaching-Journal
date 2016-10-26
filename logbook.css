@@ -37,6 +37,7 @@ body {
 .header h1 {
     font: 70px Arial,Tahoma,Helvetica,FreeSans,sans-serif;
     color: rgb(163, 40, 35);
+    color: rgb(163, 140, 35);
     margin: 0 0.3em 0em 0.3em;
 }
 .header h1 a {
@@ -107,10 +108,6 @@ h2.date-header {
     padding: auto;
     width: 256px;
 }
-.panorama {
-    width: 794px;
-    padding: 6px 6px 0px 6px;
-}
 .picture tr {
     background: black;
 }
@@ -123,7 +120,11 @@ h2.date-header {
     padding: 6px 3px 0px 3px;
     object-fit: contain;
 }
-.pciture .caption {
+.picture .panorama {
+    width: 794px;
+    padding: 6px 6px 0px 6px;
+}
+.picture .caption {
     height: 2.3em;
     padding: 0;
     line-height: 1.1em;
