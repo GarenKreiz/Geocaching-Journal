@@ -91,6 +91,10 @@ class Logbook:
             tEnd = data.find('</span>',tBegin)
             if tEnd > 0:
                 text = data[tBegin:tEnd]
+        if self.localImages:
+            text = re.sub('src="/images/','src="Images/',text)                
+        else:
+            text = re.sub('src="/images/','src="http://www.geocaching.com/images/',text)    
         self.fXML.write('<text>%s</text>\n'%text)
         
         listPanoramas=[]
