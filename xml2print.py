@@ -69,11 +69,8 @@ headerMiddle="""
 </head>
 <body>
 <div class="header">  
-<h1>
-<a href="https://www.geocaching.com/my/logs.aspx?s=1" target="_blank">%s</a>
-</h1>
+<h1>%s</h1>
 """
-# old link : http://going-west-2012.blogspot.fr/
 
 headerEnd="""
 <p class="description"><i>%s</i></p>
@@ -288,8 +285,15 @@ def processFile(fichier):
         if type == '<title>':
             # title of the logbook
             l = re.sub('</*title>','',l)
-            fOut.write('<title>%s</title>\n' % cleanText(l,False))
-            fOut.write(headerMiddle % l)
+            fOut.write('<title>%s</title>\n' % cleanText(l,True))
+            title = l.split('|')
+            print title, l, len(title), title[0]
+            if len(title) == 2:
+                print "URL", title[1]
+                titleText = '<a href="%s" target="_blank">%s</a>' % (title[1],title[0])
+            else:
+                titleText = cleanText(title[0],True)
+            fOut.write(headerMiddle % titleText)
             
         elif type == '<description>':
             # description of the logbook
@@ -307,7 +311,8 @@ def processFile(fichier):
             processingPost = False
             
             date = cleanText(l)
-            date = string.upper(date[0])+date[1:]
+            if date <> '':
+                date = string.upper(date[0])+date[1:]
             result = result +  '<date>' + date + '</date>\n'
             fOut.write(dateFormat % date)
             (image, text, width, height) = ('','',0,0)
