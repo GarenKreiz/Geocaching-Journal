@@ -38,6 +38,11 @@ $ python xml2print.py logbook.xml logbook.html
 $  firefox logbook.html
 ```
 
+* The two steps can be launched with a single command if the output file is an HTML file
+
+```
+$ python processLogs.py geocaching_logs.html logbook.html
+```
 
 ## Customization
 

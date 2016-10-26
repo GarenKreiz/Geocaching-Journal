@@ -34,13 +34,14 @@ import locale
 import urllib2
 import datetime
 
-os.environ['LC_ALL'] = 'fr_FR.UTF-8'
+#os.environ['LC_ALL'] = 'fr_FR.UTF-8'
 #locale.setlocale(locale.LC_ALL, 'fr_FR.UTF-8')
 locale.setlocale(locale.LC_ALL, '')
 
-# title and description of the logbook
-bookTitle="""Journal de géocaching<br/>Eté 2016"""
-bookDescription="""Comptes-rendus des activités géocachiques de Garenkreiz, publiés dans l\'ordre chronologique, incluant les sorties terrain pour la recherche de caches ou la maintenance ainsi que les notes publiées, accompagnés de photos prises à l\'occasion, pour conserver souvenir de bons moments et belles découvertes."""
+# default title and description of the logbook (should be in logbook_header.xml)
+bookTitle="""<title>Titre à paramétrer<br/> Customizable title</title>"""
+bookDescription="""<description>Description du journal - Logbook description - Fichier à modifier : logbook_header.xml - Modify file : logbook_header.xml</description>"""
+
 
 # jump to a given pattern while analysing a file
 def skipTo(fIn, searchString):
@@ -162,8 +163,12 @@ class Logbook:
     # analyse of the HTML page with all the logs of the geocacher
     # local dump of the web page https://www.geocaching.com/my/logs.aspx?s=1
     def processLogs(self):
-        self.fXML.write('<title>'+bookTitle+'</title>\n')
-        self.fXML.write('<description>'+bookDescription+'</description>\n')
+        try:
+            with open('logbook_header.xml', 'r') as f:
+                self.fXML.write(f.read())
+        except:
+            self.fXML.write('<title>'+bookTitle+'</title>\n')
+            self.fXML.write('<description>'+bookDescription+'</description>\n')
 
         logs = {}
         days = {}
@@ -237,6 +242,7 @@ class Logbook:
 if __name__=='__main__':
     def usage():
           print 'Usage: python processLogs.py [-q|--quiet] [-l|--local-images] geocaching_logs.html logbook.xml'
+          print '    or python processLogs.py [-q|--quiet] [-l|--local-images] geocaching_logs.html logbook.html'
           print ''
           print '   geocaching_logs.html'
           print '       dump of the web page containing all you logs (HTML only)'
@@ -244,6 +250,10 @@ if __name__=='__main__':
           print '   logbook.xml'
           print '       content of all log entries with reference to pictures'
           print '       contenu de tous les logs avec références aux images'
+          print '   logbook.html'
+          print '       web page with all logs and images (using xml2print.py)'
+          print '       page web avec tous les logs et images (utilise xml2print.py)'
+          print ''
           print '   -q|--quiet'
           print '       less verbose console output'
           print '       exécution du programme moins verbeuse'
@@ -271,7 +281,16 @@ if __name__=='__main__':
           localImages = True
 
     if len(args) == 2:
-        Logbook(args[0],args[1],verbose,localImages).processLogs()
+        if re.search(".htm[l]*",args[1], re.IGNORECASE):
+            import xml2print
+            # first phase: processLogs
+            if re.search(".htm[l]*", args[0], re.IGNORECASE):
+                Logbook(args[0],'logbook.xml',verbose,localImages).processLogs()
+                xml2print.xml2print('logbook.xml',args[1])
+            else:
+                xml2print.xml2print(args[0],args[1])
+        else:
+            Logbook(args[0],args[1],verbose,localImages).processLogs()
         print "That's all folks!"
     else:
         usage()
