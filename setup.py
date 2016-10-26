@@ -17,4 +17,7 @@
 from distutils.core import setup
 import py2exe
 
-setup(console=['processLogs.py','xml2print.py'])
+setup(
+    console=['processLogs.py','xml2print.py'],
+    data_files = [('.', ['LICENSE', 'logbook_header.xml','logbook.css'])]
+    )
