@@ -281,8 +281,8 @@ class Logbook:
 
 if __name__=='__main__':
     def usage():
-          print 'Usage: python processLogs.py [-q|--quiet] [-l|--local-images] geocaching_logs.html logbook.xml'
-          print '    or python processLogs.py [-q|--quiet] [-l|--local-images] geocaching_logs.html logbook.html'
+          print 'Usage: python processLogs.py [options] geocaching_logs.html logbook.xml'
+          print '    or python processLogs.py [options] geocaching_logs.html logbook.html'
           print ''
           print '   geocaching_logs.html'
           print '       dump of the web page containing all you logs (HTML only)'

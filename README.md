@@ -55,6 +55,13 @@ or
 \ xml2print.exe logbook.xml logbook.html
 ```
 
+## Help
+
+```
+$ python processLogs.py -h
+$ python xml2print.py -h 
+```
+
 ## Customization
 
 In [processLogs.py](processLogs.py)
@@ -134,6 +141,13 @@ ou
 ```
 \ processLogs.exe geocaching_logs.html logbook.xml
 \ xml2print.exe logbook.xml logbook.html
+```
+
+## Aide
+
+```
+$ python processLogs.py -h
+$ python xml2print.py -h 
 ```
 
 ## Paramétrage
