@@ -51,16 +51,29 @@ def skipTo(fIn, searchString):
         l = fIn.readline()
     return l
 
+def normalizeDate(date):
+    date = re.sub('[-. ]+','/',date)
+    date = re.sub('[.]+$','',date)
+    (y,m,d) = date.split('/')
+    if int(d) > 1969:
+        # dd.mm.yyyy
+        d,y = y,d
+    elif int(y) < 1970:
+        # dd.mm.yy
+        d,y = y,int(d)+2000
+    date = '%02d/%02d/%02d'%(int(y),int(m),int(d))
+    return date
+    
+
 def formatDate(date):
     (year,month,day) = date.split('/')
     strTime = date+" 00:00:01Z"
     t=0
-    for pattern in ["%d/%m/%Y %H:%M:%SZ", "%Y/%m/%d %H:%M:%SZ", "%d %b %y %H:%M:%SZ"]:
-        try:
-          t = int(time.mktime(time.strptime(strTime, pattern)))
-        except:
-            pass
-
+    try:
+        t = int(time.mktime(time.strptime(strTime, "%Y/%m/%d %H:%M:%SZ")))
+    except:
+        pass
+    
     date = time.strftime('%A %d %B %Y', time.localtime(t))
     date = date.decode(locale.getpreferredencoding()).encode('utf8')
     date = re.sub(' 0',' ',date)
@@ -184,13 +197,18 @@ class Logbook:
         while resu <> '':
             # to be improved!!!!
             typeLog = skipTo(self.fIn,'/images/logtypes')
+            if typeLog == '':
+                # end of file
+                break
             typeLog = re.sub('.*alt="','',typeLog)
             typeLog = re.sub('".*','',typeLog)
             typeLog = re.sub('[\n\r]','',typeLog)
             resu = skipTo(self.fIn,'<td>')
             resu = skipTo(self.fIn,'<td>')
-            dateLog = self.fIn.readline()
-            dateLog = re.sub('[ \n\r]','',dateLog)
+            # parse date (numerical format only) and transform in canonical form yyyy/mm/dd
+            dateLog = self.fIn.readline().strip()
+            dateLog = normalizeDate(dateLog)
+            
             resu = skipTo(self.fIn,'cache_details')
             resu = re.sub('.*guid=','',resu)
             resu = re.sub('[\n\r]','',resu)
