@@ -82,12 +82,19 @@ def formatDate(date):
 
 class Logbook:
 
-    def __init__(self, fNameInput, fNameOutput="logbook.xml", verbose=True, localImages=False):
+    def __init__(self,
+                 fNameInput, fNameOutput="logbook.xml",
+                 verbose=True, localImages=False, startDate = None, endDate = None):
         self.fIn = open(fNameInput,'r')
         self.fXML = open(fNameOutput,"w")
         self.fNameOutput = fNameOutput
         self.verbose = verbose
         self.localImages = localImages
+        self.startDate = startDate
+        self.endDate = endDate
+        
+        self.nDates = 0          # number of processed dates
+        self.nLogs = 0           # number of processed logs
 
     # analyses the HTML content of a log page
     def parseLog(self,data,day,logID,cacheID,title,status):
@@ -172,6 +179,8 @@ class Logbook:
                 for (src,caption) in listPanoramas:
                     self.fXML.write("<pano>%s<height>480</height><width>640</width><comment>%s</comment></pano>\n"%(src, caption))
 
+        self.nLogs += 1
+        
         # identifying logs without image            
         try:
             foo = images[logID][0]
@@ -235,6 +244,12 @@ class Logbook:
         dates = days.keys()
         dates.sort()
         for d in dates:
+            # check if date is in the correct interval
+            if self.startDate and d < self.startDate:
+                continue
+            if self.endDate and d > self.endDate:
+                continue
+            self.nDates += 1
             self.fXML.write('<date>%s</date>\n'%formatDate(d))
           
             dayLogs = days[d]
@@ -259,8 +274,9 @@ class Logbook:
                     f.close()
                 # grabbing information from the log page
                 self.parseLog(data,d,l,c,t,s)
+                
         self.fXML.write('<date>Source : GarenKreiz/Geocaching-Journal @ GitHub (CC BY-NC 3.0 FR)</date>\n')
-        print 'Logs: ',len(logs), 'Days:',len(dates)
+        print 'Logs: ',self.nLogs,'/',len(logs), 'Days:',self.nDates,'/',len(dates)
         print 'Result file:', self.fNameOutput 
 
 if __name__=='__main__':
@@ -284,37 +300,63 @@ if __name__=='__main__':
           print '   -l|--local-images'
           print '       use local images in directory Images (previously downloaded for example using "wget")'
           print '       utilisation d\'une copie locale des images dans le répertoire Images (téléchargées par exemple avec "wget")'
+          print '   -s|--start startDate'
+          print '       start processing log at date startDate (included, format YYYY/MM/DD)'
+          print '       commence le traitement des logs à partir de la date startDate incluse (format AAAA/MM/JJ)'
+          print '   -e|--end endDate'
+          print '       stop processing log after date endDate (format YYYY/MM/DD)'
+          print '       arrête le traitement des logs après la date endDate (format AAAA/MM/JJ)'
           
           sys.exit()
 
     import getopt
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:],"hql", ['help','quiet','local-images'])
+        opts, args = getopt.getopt(sys.argv[1:],"hqls:e:", ['help','quiet','local-images','start','end'])
     except getopt.GetoptError:
         usage()
 
     verbose = True
     localImages = False
+    startDate = None
+    endDate = None
     for opt, arg in opts:
-      if opt == '-h':
-          usage()
-      elif opt == "-q":
-          verbose = False
-      elif opt == "-l":
-          localImages = True
-
+        if opt == '-h':
+            usage()
+        elif opt == "-q":
+            verbose = False
+        elif opt == "-l":
+            localImages = True
+        elif opt == "-s":
+            if len(arg.split('/')) <> 3:
+                print "!!! Bad start date format, use YYYY/MM/DD"
+                print "!!! Format de date de début faux, utiliser AAAA/MM/JJ"
+                sys.exit(1)
+            startDate = arg
+        elif opt == "-e":
+            if len(arg.split('/')) <> 3:
+                print "Bad end date format, use YYYY/MM/DD"
+                print "Format de date de fin faux, utiliser AAAA/MM/JJ"
+                sys.exit(1)
+            endDate = arg
+    
     if len(args) == 2:
+        if re.search(".xml", args[0], re.IGNORECASE):
+            xmlFile = args[0]
+        elif re.search(".xml", args[1], re.IGNORECASE):
+            xmlFile = args[1]
+        else:
+            xmlFile = "logbook.xml"
+
+        # firt phase : from Groundspeak HTML to XML
+        if re.search(".htm[l]*", args[0], re.IGNORECASE):
+            Logbook(args[0],xmlFile,verbose,localImages,startDate,endDate).processLogs()
+
+        # second phase : from XML to generated HTML
         if re.search(".htm[l]*",args[1], re.IGNORECASE):
             import xml2print
-            # first phase: processLogs
-            if re.search(".htm[l]*", args[0], re.IGNORECASE):
-                Logbook(args[0],'logbook.xml',verbose,localImages).processLogs()
-                xml2print.xml2print('logbook.xml',args[1])
-            else:
-                xml2print.xml2print(args[0],args[1])
-        else:
-            Logbook(args[0],args[1],verbose,localImages).processLogs()
+            xml2print.xml2print(xmlFile,args[1])
+
         print "That's all folks!"
     else:
         usage()
