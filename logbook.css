@@ -115,9 +115,9 @@ h2.date-header {
     display: block;
     #max-width:764px;
     width:256px;
-    height:184px;
+    height:192px;
     margin: auto;
-    padding: 6px 3px 0px 3px;
+    padding: 3px 3px 0px 3px;
     object-fit: contain;
 }
 .picture .panorama {
