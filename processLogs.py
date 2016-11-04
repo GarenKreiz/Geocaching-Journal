@@ -111,6 +111,10 @@ class Logbook:
             tEnd = data.find('</span>',tBegin)
             if tEnd > 0:
                 text = data[tBegin:tEnd]
+        else:
+            self.fXML.write('<text> </text>\n')
+            print "!!!! Log unavailable",logID
+            return
         if self.localImages:
             text = re.sub('src="/images/','src="Images/',text)                
         else:
@@ -281,8 +285,8 @@ class Logbook:
 
 if __name__=='__main__':
     def usage():
-          print 'Usage: python processLogs.py [options] geocaching_logs.html logbook.xml'
-          print '    or python processLogs.py [options] geocaching_logs.html logbook.html'
+          print 'Usage: python processLogs.py [-q|--quiet] [-l|--local-images] geocaching_logs.html logbook.xml'
+          print '    or python processLogs.py [-q|--quiet] [-l|--local-images] geocaching_logs.html logbook.html'
           print ''
           print '   geocaching_logs.html'
           print '       dump of the web page containing all you logs (HTML only)'
