@@ -84,7 +84,7 @@ class Logbook:
 
     def __init__(self,
                  fNameInput, fNameOutput="logbook.xml",
-                 verbose=True, localImages=False, startDate = None, endDate = None):
+                 verbose=True, localImages=False, startDate = None, endDate = None, refresh = False):
         self.fIn = open(fNameInput,'r')
         self.fXML = open(fNameOutput,"w")
         self.fNameOutput = fNameOutput
@@ -92,6 +92,7 @@ class Logbook:
         self.localImages = localImages
         self.startDate = startDate
         self.endDate = endDate
+        self.refresh = refresh
         
         self.nDates = 0          # number of processed dates
         self.nLogs = 0           # number of processed logs
@@ -262,11 +263,12 @@ class Logbook:
                 # building a local cache of the HTML page of each log
                 # directory: Logs and 16 sub-directories based on the first letter
                 dir = 'Logs/_%s_/'%l[0]
-                if not os.path.isfile(dir+l):
+                if not os.path.isfile(dir+l) or self.refresh:
                     if not os.path.isdir(dir):
                         print "Creating directory "+dir
                         os.makedirs(dir)
                     url = 'http://www.geocaching.com/seek/log.aspx?LUID='+l
+                    print "Fetching log",url
                     data = urllib2.urlopen(url).read()
                     print "Saving log file "+l
                     f = open(dir+l,'w')
@@ -310,13 +312,16 @@ if __name__=='__main__':
           print '   -e|--end endDate'
           print '       stop processing log after date endDate (format YYYY/MM/DD)'
           print '       arrête le traitement des logs après la date endDate (format AAAA/MM/JJ)'
+          print '   -r|--refresh'
+          print '       refresh local cache of logs (to use when the log was changed or pictures were added)'
+          print '       rafraîchit la version locale des journaux (à utiiser si des modifications ont été faites ou des photos ont été ajoutées'
           
           sys.exit()
 
     import getopt
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:],"hqls:e:", ['help','quiet','local-images','start','end'])
+        opts, args = getopt.getopt(sys.argv[1:],"hrqls:e:", ['help','refresh','quiet','local-images','start','end'])
     except getopt.GetoptError:
         usage()
 
@@ -324,11 +329,15 @@ if __name__=='__main__':
     localImages = False
     startDate = None
     endDate = None
+    refresh = False
+    
     for opt, arg in opts:
         if opt == '-h':
             usage()
         elif opt == "-q":
             verbose = False
+        elif opt == "-r":
+            refresh = True
         elif opt == "-l":
             localImages = True
         elif opt == "-s":
@@ -354,7 +363,7 @@ if __name__=='__main__':
 
         # firt phase : from Groundspeak HTML to XML
         if re.search(".htm[l]*", args[0], re.IGNORECASE):
-            Logbook(args[0],xmlFile,verbose,localImages,startDate,endDate).processLogs()
+            Logbook(args[0],xmlFile,verbose,localImages,startDate,endDate,refresh).processLogs()
 
         # second phase : from XML to generated HTML
         if re.search(".htm[l]*",args[1], re.IGNORECASE):
