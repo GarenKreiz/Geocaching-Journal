@@ -226,7 +226,7 @@ def processFile(fichier):
     
     print "Processing",fichier
     f = open(fichier,'r')
-    text = None
+    text = ''
     
     fOut.write(headerStart)
     
@@ -237,7 +237,7 @@ def processFile(fichier):
 
         if type == '<image>' or type == '<pano>':
             flushText(text)
-            text = None
+            text = ''
             # parsing image item
             # <image>foo.jpg<height>480</height><width>640</width><comment>Nice picture</comment></image>            
             # <pano>foo.jpg<height>480</height><width>1000</width><comment>Nice panorama</comment></image>            
@@ -285,12 +285,13 @@ def processFile(fichier):
         if type == '<title>':
             # title of the logbook
             l = re.sub('</*title>','',l)
-            fOut.write('<title>%s</title>\n' % cleanText(l,True))
             title = l.split('|')
+            fOut.write('<title>%s</title>\n' % cleanText(title[0],True))
             if len(title) == 2:
                 # the title has 2 parts : a text | an URL
                 titleText = '<a href="%s" target="_blank">%s</a>' % (title[1],title[0])
             else:
+                fOut.write('<title>%s</title>\n' % cleanText(l,True))
                 titleText = title[0]
             fOut.write(headerMiddle % titleText)
             
@@ -301,7 +302,7 @@ def processFile(fichier):
         elif type == '<date>':
             # new date in the logbook
             flushText(text)
-            text = None
+            text = ''
 
             if firstDate == False:
                 flushPost()
@@ -319,7 +320,7 @@ def processFile(fichier):
         elif type == '<post>':
             # new post title : left text | url | right text | url
             flushText(text)
-            text = None
+            text = ''
             if processingImages:
                 flushImgTable()
             processingImages = False
@@ -360,7 +361,7 @@ def processFile(fichier):
             
         elif type == '</text>':
             flushText(text)
-            text = None
+            text = ''
 
         elif type == '<split/>':
             # splitting image table
