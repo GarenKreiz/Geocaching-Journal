@@ -98,13 +98,19 @@ class Logbook:
         self.nLogs = 0           # number of processed logs
 
     # analyses the HTML content of a log page
-    def parseLog(self,data,day,logID,cacheID,title,status):
+    def parseLog(self,data,day,logID,cacheID,title,status,nature):
         text = ''
         images = {}
         #print 'Log:',logID,cacheID,title,status
-        
-        self.fXML.write('<post>%s | http://www.geocaching.com/seek/cache_details.aspx?guid=%s |'%(title,cacheID))
-        self.fXML.write('%s | http://www.geocaching.com/seek/log.aspx?LUID=%s</post>\n'%(status,logID))
+
+        if nature == 'C':
+            url = 'seek/cache_'
+            urlLog='seek'
+        else:
+            url = 'track/'
+            urlLog = 'track'
+        self.fXML.write('<post>%s | http://www.geocaching.com/%sdetails.aspx?guid=%s |'%(title,url,cacheID))
+        self.fXML.write('%s | http://www.geocaching.com/%s/log.aspx?LUID=%s</post>\n'%(status,urlLog,logID))
                    
         tBegin = data.find('_LogText">')
         if tBegin > 0:
@@ -134,8 +140,9 @@ class Logbook:
                 sBegin = data.find('src="',p)
                 sEnd = data.find('"',sBegin+5)
                 src = data[sBegin+5:sEnd]
-                if not re.search('cache/log',src):
+                if not re.search('(cache|track)/log/',src):
                     print '!!!! Bad image:',src
+                    p = data.find('<img ',p+4)
                     continue
                 
                 # normalize form : http://img.geocaching.com/cache/log/display/*.jpg
@@ -216,14 +223,18 @@ class Logbook:
                 break
             typeLog = re.sub('.*alt="','',typeLog)
             typeLog = re.sub('".*','',typeLog)
-            typeLog = re.sub('[\n\r]','',typeLog)
+            typeLog = re.sub('[\n\r]*','',typeLog)
             resu = skipTo(self.fIn,'<td>')
             resu = skipTo(self.fIn,'<td>')
             # parse date (numerical format only) and transform in canonical form yyyy/mm/dd
             dateLog = self.fIn.readline().strip()
             dateLog = normalizeDate(dateLog)
             
-            resu = skipTo(self.fIn,'cache_details')
+            resu = skipTo(self.fIn,'details')
+            if (resu.find('cache_details') > 1):
+                logNature = 'C'    # log for a cache
+            else:
+                logNature = 'T'    # log for a trackable
             resu = re.sub('.*guid=','',resu)
             resu = re.sub('[\n\r]','',resu)
             cacheLog = re.sub('".*','',resu)
@@ -235,16 +246,16 @@ class Logbook:
             idLog = re.sub('".*','',idLog)
             idLog = re.sub('[ \n\r]','',idLog)
             if idLog <> '':
-                logs[idLog] = (dateLog,cacheLog,nameLog,typeLog)
+                logs[idLog] = (dateLog,cacheLog,nameLog,typeLog,logNature)
                 try:
-                    days[dateLog].append((idLog,cacheLog,nameLog,typeLog))
+                    days[dateLog].append((idLog,cacheLog,nameLog,typeLog,logNature))
                 except:
-                    days[dateLog] = [(idLog,cacheLog,nameLog,typeLog)]
+                    days[dateLog] = [(idLog,cacheLog,nameLog,typeLog,logNature)]
             else:
                 print "=========================================", resu
             
             if self.verbose:
-                print "%s|%s|%s|%s|%s"%(idLog,dateLog,cacheLog,nameLog,typeLog)
+                print "%s|%s|%s|%s|%s|%s"%(idLog,dateLog,cacheLog,nameLog,typeLog,logNature)
 
         dates = days.keys()
         dates.sort()
@@ -259,15 +270,22 @@ class Logbook:
           
             dayLogs = days[d]
             dayLogs.reverse()
-            for (l,c,t,s) in dayLogs:
+            for (l,c,t,s,logNature) in dayLogs:
+                # logId, cacheId or tbID, title, type, nature 
                 # building a local cache of the HTML page of each log
                 # directory: Logs and 16 sub-directories based on the first letter
-                dir = 'Logs/_%s_/'%l[0]
+                if logNature == 'C':
+                    url = 'seek'
+                    dir = 'Logs'
+                else:
+                    url = 'track'
+                    dir = 'LogsTB'   # dedicated directory for TB logs as ID may be reused between TB and cache logs 
+                dir = dir + '/_%s_/'%l[0]
                 if not os.path.isfile(dir+l) or self.refresh:
                     if not os.path.isdir(dir):
                         print "Creating directory "+dir
                         os.makedirs(dir)
-                    url = 'http://www.geocaching.com/seek/log.aspx?LUID='+l
+                    url = 'http://www.geocaching.com/'+url+'/log.aspx?LUID='+l
                     print "Fetching log",url
                     data = urllib2.urlopen(url).read()
                     print "Saving log file "+l
@@ -279,7 +297,7 @@ class Logbook:
                     data = f.read()
                     f.close()
                 # grabbing information from the log page
-                self.parseLog(data,d,l,c,t,s)
+                self.parseLog(data,d,l,c,t,s,logNature)
                 
         self.fXML.write('<date>Source : GarenKreiz/Geocaching-Journal @ GitHub (CC BY-NC 3.0 FR)</date>\n')
         print 'Logs: ',self.nLogs,'/',len(logs), 'Days:',self.nDates,'/',len(dates)
