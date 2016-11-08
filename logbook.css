@@ -121,8 +121,8 @@ h2.date-header {
     object-fit: contain;
 }
 .picture .panorama {
-    width: 794px;
-    padding: 6px 6px 0px 6px;
+    width: 800px;
+    padding: 3px 3px 0px 3px;
 }
 .picture .caption {
     height: 2.3em;
