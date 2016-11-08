@@ -84,10 +84,10 @@ articleBegin="""
 dateFormat="""
 <div class="date">
 <h2 class="date-header">%s</h2>
+<div class="post-entry">
 """
 
 postBegin="""
-<div class="post-entry">
 <h3 class="post-title">
 """
 
@@ -97,6 +97,7 @@ postMiddle="""
 
 postBanner="""
 <div class="post-banner"></div>
+<div class="post-entry">
 """
 
 postEnd="""
@@ -143,7 +144,7 @@ def cleanText(buffer,all=True):
     return resu
 
 # end of a row of images
-def flushImgRow():
+def flushImgTable():
     global printing, cleaningComment
 
     global maxRow, rowCount, pictures, fOut, maxWidth
@@ -170,7 +171,7 @@ def flushImgRow():
         imageFullSize = re.sub('https://img.geocaching.com/cache/log/display/','https://img.geocaching.com/cache/log/',image)
         popupLink = '<a href="javascript:popstatic(\'%s\',\'.\');">'%imageFullSize
         if comment == '__EMPTY__':
-            fOut.write('<table></table>')
+            fOut.write('<td></td>')
         elif d == 'V':
             fOut.write(pictureFormatVertical   % (popupLink, image, '</a>', comment))
         elif d == 'H':
@@ -184,13 +185,6 @@ def flushImgRow():
     maxWidth= { 'H':0, 'V':0, 'P':0 }
     rowCount = 0
     pictures = []
-
-# end of the table of images
-def flushImgTable():
-    global rowCount, pictures
-
-    flushImgRow()
-    #fOut.write('</table>\n')
 
 def flushPost():
     global fOut
@@ -246,7 +240,7 @@ def processFile(fichier):
             try:
                 imgDesc = line.split('|')
             except Exception, msg:
-                print '!!!!!!!!!!!!! Bad image format:', msg, line
+                print '!!!!!!!!!!!!! Exception: bad image format:', msg, line
             if len(imgDesc) == 4:
                 (_,image,comment,_) = imgDesc
             elif len(imgDesc) == 9:
@@ -259,8 +253,10 @@ def processFile(fichier):
                 pictures = []
                 nbCommentRows = 0
                 end = False
-                rowCount = 0
-                #fOut.write('<table class="table-pictures">')
+                if type == '<pano>':
+                    rowCount = maxRow
+                else:
+                    rowCount = 0
             processingImages = True
             if type == '<pano>':
                 pictures.append(('P',image,comment,width,height))
@@ -357,7 +353,9 @@ def processFile(fichier):
         elif type == '<text>':
             # list of paragraphs
             fOut.write('<div style="clear: both;"></div>')
-            text = cleanText(l,False)
+            if text <> '':
+                text = text +'</p><p>'
+            text = text + cleanText(l,False)
             
         elif type == '</text>':
             flushText(text)
@@ -383,8 +381,8 @@ def processFile(fichier):
         else:
             text = text + cleanText(l,False)
 
-        if rowCount == maxRow:
-            flushImgRow()
+        if rowCount >= maxRow:
+            flushImgTable()
             rowCount = 0
     
         l = f.readline().strip()
