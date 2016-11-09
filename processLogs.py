@@ -84,7 +84,7 @@ class Logbook:
 
     def __init__(self,
                  fNameInput, fNameOutput="logbook.xml",
-                 verbose=True, localImages=False, startDate = None, endDate = None, refresh = False):
+                 verbose=True, localImages=False, startDate = None, endDate = None, refresh = False, excluded = []):
         self.fIn = open(fNameInput,'r')
         self.fXML = open(fNameOutput,"w")
         self.fNameOutput = fNameOutput
@@ -93,6 +93,7 @@ class Logbook:
         self.startDate = startDate
         self.endDate = endDate
         self.refresh = refresh
+        self.excluded = excluded
         
         self.nDates = 0          # number of processed dates
         self.nLogs = 0           # number of processed logs
@@ -224,6 +225,7 @@ class Logbook:
             typeLog = re.sub('.*alt="','',typeLog)
             typeLog = re.sub('".*','',typeLog)
             typeLog = re.sub('[\n\r]*','',typeLog)
+
             resu = skipTo(self.fIn,'<td>')
             resu = skipTo(self.fIn,'<td>')
             # parse date (numerical format only) and transform in canonical form yyyy/mm/dd
@@ -245,18 +247,20 @@ class Logbook:
             idLog = re.sub('.*LUID=','',resu)
             idLog = re.sub('".*','',idLog)
             idLog = re.sub('[ \n\r]','',idLog)
-            if idLog <> '':
+
+            # keeping the logs that are not excluded by -x option
+            keep = True
+            for typeExclude in self.excluded:
+                keep = keep & (re.search(typeExclude,typeLog,re.IGNORECASE) < 0)
+            if keep and idLog <> '':
                 logs[idLog] = (dateLog,cacheLog,nameLog,typeLog,logNature)
                 try:
                     days[dateLog].append((idLog,cacheLog,nameLog,typeLog,logNature))
                 except:
                     days[dateLog] = [(idLog,cacheLog,nameLog,typeLog,logNature)]
-            else:
-                print "=========================================", resu
+                if self.verbose:
+                    print "%s|%s|%s|%s|%s|%s"%(idLog,dateLog,cacheLog,nameLog,typeLog,logNature)
             
-            if self.verbose:
-                print "%s|%s|%s|%s|%s|%s"%(idLog,dateLog,cacheLog,nameLog,typeLog,logNature)
-
         dates = days.keys()
         dates.sort()
         for d in dates:
@@ -333,13 +337,16 @@ if __name__=='__main__':
           print '   -r|--refresh'
           print '       refresh local cache of logs (to use when the log was changed or pictures were added)'
           print '       rafraichit la version locale des journaux (a utiiser si des modifications ont ete faites ou des photos ont ete ajoutees'
+          print '   -x|--exclude'
+          print '       exclude a given log type, can be repeated (for example "-x update -x disable")'
+          print '       exclusion de certains types de log, par recherche de chaine de caractere (par exemple "-x update -x disable")'
           
           sys.exit()
 
     import getopt
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:],"hrqls:e:", ['help','refresh','quiet','local-images','start','end'])
+        opts, args = getopt.getopt(sys.argv[1:],"hrqls:e:x:", ['help','refresh','quiet','local-images','start','end','exclude'])
     except getopt.GetoptError:
         usage()
 
@@ -348,6 +355,7 @@ if __name__=='__main__':
     startDate = None
     endDate = None
     refresh = False
+    excluded = []
     
     for opt, arg in opts:
         if opt == '-h':
@@ -370,6 +378,10 @@ if __name__=='__main__':
                 print "Format de date de fin faux, utiliser AAAA/MM/JJ"
                 sys.exit(1)
             endDate = arg
+        elif opt == "-x":
+            excluded.append(arg)
+
+    print "Excluded:",excluded
     
     if len(args) == 2:
         if re.search(".xml", args[0], re.IGNORECASE):
@@ -381,7 +393,7 @@ if __name__=='__main__':
 
         # firt phase : from Groundspeak HTML to XML
         if re.search(".htm[l]*", args[0], re.IGNORECASE):
-            Logbook(args[0],xmlFile,verbose,localImages,startDate,endDate,refresh).processLogs()
+            Logbook(args[0],xmlFile,verbose,localImages,startDate,endDate,refresh,excluded).processLogs()
 
         # second phase : from XML to generated HTML
         if re.search(".htm[l]*",args[1], re.IGNORECASE):
