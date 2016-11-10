@@ -71,7 +71,7 @@ h2.date-header {
     background: #5f452a url("http://www.geocaching.com/images/tlnMasters/topographic-footer.png");
 }
 .post-entry {
-    padding: 4px 20px 4px 20px;
+    padding: 4px 19px 4px 19px;
     line-height: 1.4;
     font-size: 120%;
 }
@@ -89,7 +89,7 @@ h2.date-header {
 }
 .post-entry p {
     margin: 6px 0px 6px 0px;
-    padding: 0px 5px 0px 5px;
+    padding: 0px 4px 0px 4px;
     text-align: justify;
     text-justify: inter-word;   
 }
