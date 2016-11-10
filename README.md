@@ -6,7 +6,7 @@ Generation of a journal of geocaching logs
 ## Features
 
 * generation of XML files containing logs and list of pictures
-* download a backup of the logs' web pages
+* download of a backup of the logs' web pages
 * customization of HTML output with CSS styles or inside the scripts
 * identification of logs without pictures
 * requires no external modules
@@ -53,6 +53,12 @@ or
 ```
 \ processLogs.exe geocaching_logs.html logbook.xml
 \ xml2print.exe logbook.xml logbook.html
+```
+
+* When the text of a log entry is change online or when pictures are added to a log, use the "--refresh" option to force the update of the cache of the log web pages. For example, for the logs on day AAAA/MM/DD, do
+
+```
+$ python processLogs.py -s AAAA/MM/DD -e AAAA/MM/DD -r geocaching_logs.html logbook.html
 ```
 
 ## Help
@@ -141,6 +147,12 @@ ou
 ```
 \ processLogs.exe geocaching_logs.html logbook.xml
 \ xml2print.exe logbook.xml logbook.html
+```
+
+* Si le text d'une entrée du journal est modifiée ou si des photos ont été ajoutées, il faut utiliser l'option "--refresh" pour forcer la mise à jour du cache local des pages web des logs. Par exemple, pour la journée AAAA/MM/JJ, faire
+
+```
+$ python processLogs.py -s AAAA/MM/JJ -e AAAA/MM/JJ -r geocaching_logs.html logbook.html
 ```
 
 ## Aide
