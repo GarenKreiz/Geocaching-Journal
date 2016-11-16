@@ -217,37 +217,31 @@ class Logbook:
         days = {}
 
         l = None
-        resu = None
-        while resu <> '':
-            # to be improved!!!!
-            typeLog = skipTo(self.fIn,'height="16" alt=')
-            if typeLog == '':
-                break # end of file
-            typeLog = re.search('title=\"(.*)\"',typeLog).group(1).replace('\r\n','')
-            resu = skipTo(self.fIn,'<td>')
-            resu = skipTo(self.fIn,'<td>')
-            # parse date (numerical format only) and transform in canonical form yyyy/mm/dd
-            dateLog = self.fIn.readline().strip()
-            dateLog = normalizeDate(dateLog)
-            resu = skipTo(self.fIn,'details')
-            logNature =  ('C' if resu.find('cache_details') > 1 else 'T') # C for Cache and T for trackbale
-            cacheLog = re.search('guid=(.*)\" class',resu).group(1)
-            titleCache = re.search('</a> <a(.*)?\">(.*)</a>',resu).group(2)
-            titleCache = re.sub('</span>','',titleCache) # case <a ...><span ...> title </span></a>
-            resu = skipTo(self.fIn,'log.aspx')
-            idLog = re.search('LUID=(.*)\" target',resu).group(1)
+        data = self.fIn.read()
+        tagTable = re.search('<table class="Table">(.*)</table>',data, re.S|re.M).group(1)
+        tagTr = re.finditer('<tr(.*?)</tr>',tagTable, re.S)
+        listTr = [result.group(1) for result in tagTr]
+        for tr in listTr:
+            td = re.finditer('<td>(.*?)</td>',tr, re.S)
+            listTd = [result.group(1) for result in td]
+            dateLog =  listTd[2].strip()
+            typeLog =  re.search('title="(.*)">',listTd[0]).group(1)
+            idCache = re.search('guid=(.*?)"',listTd[3]).group(1)
+            idLog = re.search('LUID=(.*?)"',listTd[5]).group(1)
+            titleCache =  re.search('</a> <a(.*)?\">(.*)</a>',listTd[3]).group(2).replace('</span>','')
+            logNature =  ('C' if listTd[3].find('cache_details') > 1 else 'T') # C for Cache and T for trackbale
             # keeping the logs that are not excluded by -x option
             keep = True
             for typeExclude in self.excluded:
                 keep = keep & (re.search(typeExclude,typeLog,re.IGNORECASE) < 0)
             if keep and idLog <> '':
-                logs[idLog] = (dateLog,cacheLog,titleCache,typeLog,logNature)
+                logs[idLog] = (dateLog,idCache,titleCache,typeLog,logNature)
                 try:
-                    days[dateLog].append((idLog,cacheLog,titleCache,typeLog,logNature))
+                    days[dateLog].append((idLog,idCache,titleCache,typeLog,logNature))
                 except:
-                    days[dateLog] = [(idLog,cacheLog,titleCache,typeLog,logNature)]
+                    days[dateLog] = [(idLog,idCache,titleCache,typeLog,logNature)]
                 if self.verbose:
-                    print "%s|%s|%s|%s|%s|%s"%(idLog,dateLog,cacheLog,titleCache,typeLog,logNature)
+                    print "%s|%s|%s|%s|%s|%s"%(idLog,dateLog,idCache,titleCache,typeLog,logNature)
         dates = days.keys()
         dates.sort()
         for d in dates:
