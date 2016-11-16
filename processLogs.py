@@ -52,16 +52,7 @@ def skipTo(fIn, searchString):
     return line
 
 def normalizeDate(date):
-    date = re.sub('[-. ]+','/',date)
-    date = re.sub('[.]+$','',date)
-    (y,m,d) = date.split('/')
-    if int(d) > 1969:
-        # dd.mm.yyyy
-        d,y = y,d
-    elif int(y) < 1970:
-        # dd.mm.yy
-        d,y = y,int(d)+2000
-    date = '%02d/%02d/%02d'%(int(y),int(m),int(d))
+    date = date[6:10] + '/' + date[0:2]  + '/' + date[3:5]
     return date
 
 
@@ -246,6 +237,7 @@ class Logbook:
                     print "%s|%s|%s|%s|%s|%s"%(idLog,dateLog,cacheLog,titleCache,typeLog,logNature)
         dates = days.keys()
         dates.sort()
+
         for d in dates:
             # check if date is in the correct interval
             if self.startDate and d < self.startDate:
