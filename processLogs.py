@@ -38,8 +38,8 @@ import urllib2
 locale.setlocale(locale.LC_ALL, '')
 
 # default title and description of the logbook (should be in logbook_header.xml)
-bookTitle="""<title>Titre à paramétrer<br/> Customizable title</title>"""
-bookDescription="""<description>Description du journal - Logbook description - Fichier à modifier : logbook_header.xml - Modify file : logbook_header.xml</description>"""
+bookTitle="""<title>Titre a parametrer<br/> Customizable title</title>"""
+bookDescription="""<description>Description du journal - Logbook description - Fichier a modifier : logbook_header.xml - Modify file : logbook_header.xml</description>"""
 
 
 # jump to a given pattern while analysing a file
@@ -53,8 +53,11 @@ def skipTo(fIn, searchString):
 
 def normalizeDate(date):
     date = re.sub('[-. ]+','/',date)
-    date = re.sub('[.]+$','',date)
+    date = re.sub('/+$','',date)
     (y,m,d) = date.split('/')
+    if int(m) > 12:
+        print "Date format month/day/year not supported. Choose another format in the web site preferences (day/month/year)."
+        sys.exit()
     if int(d) > 1969:
         # dd.mm.yyyy
         d,y = y,d
@@ -230,6 +233,7 @@ class Logbook:
             logNature =  ('C' if resu.find('cache_details') > 1 else 'T') # C for Cache and T for trackbale
             cacheLog = re.search('guid=(.*)\" class',resu).group(1)
             titleCache = re.search('</a> <a(.*)?\">(.*)</a>',resu).group(2)
+            titleCache = re.sub('</span>','',titleCache) # case <a ...><span ...> title </span></a>
             resu = skipTo(self.fIn,'log.aspx')
             idLog = re.search('LUID=(.*)\" target',resu).group(1)
             # keeping the logs that are not excluded by -x option
@@ -313,7 +317,7 @@ if __name__=='__main__':
         print '       utilisation d\'une copie locale des images dans le repertoire Images (telechargees par exemple avec "wget")'
         print '   -s|--start startDate'
         print '       start processing log at date startDate (included, format YYYY/MM/DD)'
-        print '       commence le traitement des logs à partir de la date startDate incluse (format AAAA/MM/JJ)'
+        print '       commence le traitement des logs a partir de la date startDate incluse (format AAAA/MM/JJ)'
         print '   -e|--end endDate'
         print '       stop processing log after date endDate (format YYYY/MM/DD)'
         print '       arrete le traitement des logs apres la date endDate (format AAAA/MM/JJ)'
@@ -352,7 +356,7 @@ if __name__=='__main__':
         elif opt == "-s":
             if len(arg.split('/')) <> 3:
                 print "!!! Bad start date format, use YYYY/MM/DD"
-                print "!!! Format de date de début faux, utiliser AAAA/MM/JJ"
+                print "!!! Format de date de debut faux, utiliser AAAA/MM/JJ"
                 sys.exit(1)
             startDate = arg
         elif opt == "-e":
@@ -379,11 +383,9 @@ if __name__=='__main__':
             Logbook(args[0],xmlFile,verbose,localImages,startDate,endDate,refresh,excluded).processLogs()
 
         # second phase : from XML to generated HTML
-        '''
         if re.search(".htm[l]*",args[1], re.IGNORECASE):
             import xml2print
             xml2print.xml2print(xmlFile,args[1])
-        '''
         print "That's all folks!"
     else:
         usage()
