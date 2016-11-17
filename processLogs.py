@@ -249,20 +249,20 @@ class Logbook:
                 # directory: Logs and 16 sub-directories based on the first letter
 
                 # LogsTB dedicated directory for TB logs as ID may be reused between TB and cache logs
-                url, dir = (('seek', 'Logs') if logNature == 'C' else ('track', 'LogsTB'))
-                dir = dir + '/_%s_/'%l[0]
-                if not os.path.isfile(dir+l) or self.refresh:
-                    if not os.path.isdir(dir):
-                        print "Creating directory "+dir
-                        os.makedirs(dir)
+                url, dirLog = (('seek', 'Logs') if logNature == 'C' else ('track', 'LogsTB'))
+                dirLog = dirLog + '/_%s_/'%l[0]
+                if not os.path.isfile(dirLog+l) or self.refresh:
+                    if not os.path.isdir(dirLog):
+                        print "Creating directory "+dirLog
+                        os.makedirs(dirLog)
                     url = 'http://www.geocaching.com/'+url+'/log.aspx?LUID='+l
                     print "Fetching log",url
                     data = urllib2.urlopen(url).read()
                     print "Saving log file "+l
-                    with open(dir+l,'w') as fw:
+                    with open(dirLog+l,'w') as fw:
                         fw.write(data)
                 else:
-                    with open(dir+l,'r') as fr:
+                    with open(dirLog+l,'r') as fr:
                         data = fr.read()
                 # grabbing information from the log page
                 self.parseLog(data,d,l,c,t,s,logNature)
