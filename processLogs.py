@@ -102,6 +102,12 @@ class Logbook:
         else:
             url = 'track/'
             urlLog = 'track'
+            # adding the name of the cache where the trackable is, if present in the log
+            tBegin = data.find('cache_details.aspx')
+            if tBegin > 0:
+                tBegin = data.find('>',tBegin)
+                tEnd = data.find('<',tBegin)
+                title = title + ' @ '+ data[tBegin+1:tEnd]
         self.fXML.write('<post>%s | http://www.geocaching.com/%sdetails.aspx?guid=%s |'%(title,url,cacheID))
         self.fXML.write('%s | http://www.geocaching.com/%s/log.aspx?LUID=%s</post>\n'%(status,urlLog,logID))
 
