@@ -227,7 +227,9 @@ class Logbook:
             titleCache =  re.search('</a> <a(.*)?\">(.*)</a>',listTd[3]).group(2).replace('</span>','')
             logNature =  ('C' if listTd[3].find('cache_details') > 1 else 'T') # C for Cache and T for trackable
             # keeping the logs that are not excluded by -x option
-            keep = (True if typeLog.lower() in [item.lower() for item in self.excluded] else False)
+            #keep = (True if typeLog.lower() in [item.lower() for item in self.excluded] else False)
+            #test short string research exclude - ex : -x Write for Write note or -x Found for Found it - etc. 
+            keep = (True if len([excluded for excluded in self.excluded if excluded.lower() in typeLog.lower()]) else False)
             if not keep and idLog <> '':
                 logsCount += 1
                 try:
