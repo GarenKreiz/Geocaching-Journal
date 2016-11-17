@@ -249,12 +249,9 @@ class Logbook:
                 # logId, cacheId or tbID, title, type, nature
                 # building a local cache of the HTML page of each log
                 # directory: Logs and 16 sub-directories based on the first letter
-                if logNature == 'C':
-                    url = 'seek'
-                    dir = 'Logs'
-                else:
-                    url = 'track'
-                    dir = 'LogsTB'   # dedicated directory for TB logs as ID may be reused between TB and cache logs
+
+                # LogsTB dedicated directory for TB logs as ID may be reused between TB and cache logs
+                url, dir = (('seek', 'Logs') if logNature == 'C' else ('track', 'LogsTB'))
                 dir = dir + '/_%s_/'%l[0]
                 if not os.path.isfile(dir+l) or self.refresh:
                     if not os.path.isdir(dir):
