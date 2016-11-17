@@ -225,7 +225,7 @@ class Logbook:
             td = re.finditer('<td>(.*?)</td>',tr, re.S)
             listTd = [result.group(1) for result in td]
             dateLog =  normalizeDate(listTd[2].strip())
-            typeLog =  re.search('title="(.*)">',listTd[0]).group(1)
+            typeLog =  re.search('title="(.*)".*>',listTd[0]).group(1)
             idCache = re.search('guid=(.*?)"',listTd[3]).group(1)
             idLog = re.search('LUID=(.*?)"',listTd[5]).group(1)
             titleCache =  re.search('</a> <a(.*)?\">(.*)</a>',listTd[3]).group(2).replace('</span>','')
