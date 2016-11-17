@@ -1,5 +1,6 @@
 #! python
 # -*- coding: utf-8 -*-
+"""
 ################################################################################
 #
 # processLog.py
@@ -24,6 +25,7 @@
 #   You should have received a copy of the GNU General Public License
 #   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
+"""
 
 import re
 import os
@@ -40,16 +42,6 @@ locale.setlocale(locale.LC_ALL, '')
 # default title and description of the logbook (should be in logbook_header.xml)
 bookTitle="""<title>Titre a parametrer<br/> Customizable title</title>"""
 bookDescription="""<description>Description du journal - Logbook description - Fichier a modifier : logbook_header.xml - Modify file : logbook_header.xml</description>"""
-
-
-# jump to a given pattern while analysing a file
-def skipTo(fIn, searchString):
-    pattern = re.compile(searchString)
-    line = fIn.readline()
-    while line <> '' and (not pattern.search(line)):
-        line = fIn.readline()
-    #print line
-    return line
 
 def normalizeDate(date):
     date = re.sub('[-. ]+','/',date)
@@ -219,7 +211,7 @@ class Logbook:
             self.fXML.write('<title>'+bookTitle+'</title>\n')
             self.fXML.write('<description>'+bookDescription+'</description>\n')
 
-        logs = {}
+        logsCount = 0
         days = {}
 
         l = None
@@ -235,13 +227,13 @@ class Logbook:
             idCache = re.search('guid=(.*?)"',listTd[3]).group(1)
             idLog = re.search('LUID=(.*?)"',listTd[5]).group(1)
             titleCache =  re.search('</a> <a(.*)?\">(.*)</a>',listTd[3]).group(2).replace('</span>','')
-            logNature =  ('C' if listTd[3].find('cache_details') > 1 else 'T') # C for Cache and T for trackbale
+            logNature =  ('C' if listTd[3].find('cache_details') > 1 else 'T') # C for Cache and T for trackable
             # keeping the logs that are not excluded by -x option
-            keep = True
-            for typeExclude in self.excluded:
-                keep = keep & (re.search(typeExclude,typeLog,re.IGNORECASE) < 0)
-            if keep and idLog <> '':
-                logs[idLog] = (dateLog,idCache,titleCache,typeLog,logNature)
+            #keep = (True if typeLog.lower() in [item.lower() for item in self.excluded] else False)
+            #test short string research exclude - ex : -x Write for Write note or -x Found for Found it - etc. 
+            keep = (True if len([excluded for excluded in self.excluded if excluded.lower() in typeLog.lower()]) else False)
+            if not keep and idLog <> '':
+                logsCount += 1
                 try:
                     days[dateLog].append((idLog,idCache,titleCache,typeLog,logNature))
                 except:
@@ -265,33 +257,28 @@ class Logbook:
                 # logId, cacheId or tbID, title, type, nature
                 # building a local cache of the HTML page of each log
                 # directory: Logs and 16 sub-directories based on the first letter
-                if logNature == 'C':
-                    url = 'seek'
-                    dir = 'Logs'
-                else:
-                    url = 'track'
-                    dir = 'LogsTB'   # dedicated directory for TB logs as ID may be reused between TB and cache logs
-                dir = dir + '/_%s_/'%l[0]
-                if not os.path.isfile(dir+l) or self.refresh:
-                    if not os.path.isdir(dir):
-                        print "Creating directory "+dir
-                        os.makedirs(dir)
+
+                # LogsTB dedicated directory for TB logs as ID may be reused between TB and cache logs
+                url, dirLog = (('seek', 'Logs') if logNature == 'C' else ('track', 'LogsTB'))
+                dirLog = dirLog + '/_%s_/'%l[0]
+                if not os.path.isfile(dirLog+l) or self.refresh:
+                    if not os.path.isdir(dirLog):
+                        print "Creating directory "+dirLog
+                        os.makedirs(dirLog)
                     url = 'http://www.geocaching.com/'+url+'/log.aspx?LUID='+l
                     print "Fetching log",url
                     data = urllib2.urlopen(url).read()
                     print "Saving log file "+l
-                    f = open(dir+l,'w')
-                    f.write(data)
-                    f.close()
+                    with open(dirLog+l,'w') as fw:
+                        fw.write(data)
                 else:
-                    f = open(dir+l,'r')
-                    data = f.read()
-                    f.close()
+                    with open(dirLog+l,'r') as fr:
+                        data = fr.read()
                 # grabbing information from the log page
                 self.parseLog(data,d,l,c,t,s,logNature)
 
         self.fXML.write('<date>Source : GarenKreiz/Geocaching-Journal @ GitHub (CC BY-NC 3.0 FR)</date>\n')
-        print 'Logs: ',self.nLogs,'/',len(logs), 'Days:',self.nDates,'/',len(dates)
+        print 'Logs: ',self.nLogs,'/',logsCount, 'Days:',self.nDates,'/',len(dates)
         print 'Result file:', self.fNameOutput
 
 if __name__=='__main__':
