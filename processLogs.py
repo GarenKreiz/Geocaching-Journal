@@ -203,7 +203,7 @@ class Logbook:
             self.fXML.write('<title>'+bookTitle+'</title>\n')
             self.fXML.write('<description>'+bookDescription+'</description>\n')
 
-        logs = {}
+        logsCount = 0
         days = {}
 
         l = None
@@ -223,7 +223,7 @@ class Logbook:
             # keeping the logs that are not excluded by -x option
             keep = (True if typeLog.lower() in [item.lower() for item in self.excluded] else False)
             if not keep and idLog <> '':
-                logs[idLog] = (dateLog,idCache,titleCache,typeLog,logNature)
+                logsCount += 1
                 try:
                     days[dateLog].append((idLog,idCache,titleCache,typeLog,logNature))
                 except:
@@ -268,7 +268,7 @@ class Logbook:
                 self.parseLog(data,d,l,c,t,s,logNature)
 
         self.fXML.write('<date>Source : GarenKreiz/Geocaching-Journal @ GitHub (CC BY-NC 3.0 FR)</date>\n')
-        print 'Logs: ',self.nLogs,'/',len(logs), 'Days:',self.nDates,'/',len(dates)
+        print 'Logs: ',self.nLogs,'/',logsCount, 'Days:',self.nDates,'/',len(dates)
         print 'Result file:', self.fNameOutput
 
 if __name__=='__main__':
