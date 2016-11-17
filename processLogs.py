@@ -41,16 +41,6 @@ locale.setlocale(locale.LC_ALL, '')
 bookTitle="""<title>Titre a parametrer<br/> Customizable title</title>"""
 bookDescription="""<description>Description du journal - Logbook description - Fichier a modifier : logbook_header.xml - Modify file : logbook_header.xml</description>"""
 
-
-# jump to a given pattern while analysing a file
-def skipTo(fIn, searchString):
-    pattern = re.compile(searchString)
-    line = fIn.readline()
-    while line <> '' and (not pattern.search(line)):
-        line = fIn.readline()
-    #print line
-    return line
-
 def normalizeDate(date):
     date = re.sub('[-. ]+','/',date)
     date = re.sub('/+$','',date)
