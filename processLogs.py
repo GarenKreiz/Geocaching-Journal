@@ -264,13 +264,11 @@ class Logbook:
                     print "Fetching log",url
                     data = urllib2.urlopen(url).read()
                     print "Saving log file "+l
-                    f = open(dir+l,'w')
-                    f.write(data)
-                    f.close()
+                    with open(dir+l,'w') as fw:
+                        fw.write(data)
                 else:
-                    f = open(dir+l,'r')
-                    data = f.read()
-                    f.close()
+                    with open(dir+l,'r') as fr:
+                        data = fr.read()
                 # grabbing information from the log page
                 self.parseLog(data,d,l,c,t,s,logNature)
 
