@@ -219,12 +219,10 @@ class Logbook:
             idCache = re.search('guid=(.*?)"',listTd[3]).group(1)
             idLog = re.search('LUID=(.*?)"',listTd[5]).group(1)
             titleCache =  re.search('</a> <a(.*)?\">(.*)</a>',listTd[3]).group(2).replace('</span>','')
-            logNature =  ('C' if listTd[3].find('cache_details') > 1 else 'T') # C for Cache and T for trackbale
+            logNature =  ('C' if listTd[3].find('cache_details') > 1 else 'T') # C for Cache and T for trackable
             # keeping the logs that are not excluded by -x option
-            keep = True
-            for typeExclude in self.excluded:
-                keep = keep & (re.search(typeExclude,typeLog,re.IGNORECASE) < 0)
-            if keep and idLog <> '':
+            keep = (True if typeLog.lower() in [item.lower() for item in self.excluded] else False)
+            if not keep and idLog <> '':
                 logs[idLog] = (dateLog,idCache,titleCache,typeLog,logNature)
                 try:
                     days[dateLog].append((idLog,idCache,titleCache,typeLog,logNature))
