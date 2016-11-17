@@ -191,3 +191,9 @@ Dans le fichier [logbook.css](logbook.css)
 # Sample - Echantillon
 
 ![Example](https://raw.githubusercontent.com/GarenKreiz/Geocaching-Journal/master/logbook_example.jpg)
+
+# Credits - Remerciements
+
+Merci aux testeurs Ato-Club et TofLaBeuze.
+
+Merci au contributeur Mides pour la simplification du code Python.
