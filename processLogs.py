@@ -41,43 +41,12 @@ locale.setlocale(locale.LC_ALL, '')
 bookTitle="""<title>Titre a parametrer<br/> Customizable title</title>"""
 bookDescription="""<description>Description du journal - Logbook description - Fichier a modifier : logbook_header.xml - Modify file : logbook_header.xml</description>"""
 
-def normalizeDate(date):
-    date = re.sub('[-. ]+','/',date)
-    date = re.sub('/+$','',date)
-    (y,m,d) = date.split('/')
-    if int(m) > 12:
-        print "Date format month/day/year not supported. Choose another format in the web site preferences (day/month/year)."
-        sys.exit()
-    if int(d) > 1969:
-        # dd.mm.yyyy
-        d,y = y,d
-    elif int(y) < 1970:
-        # dd.mm.yy
-        d,y = y,int(d)+2000
-    date = '%02d/%02d/%02d'%(int(y),int(m),int(d))
-    return date
-
-
-def formatDate(date):
-    strTime = date+" 00:00:01Z"
-    t=0
-    try:
-        t = int(time.mktime(time.strptime(strTime, "%Y/%m/%d %H:%M:%SZ")))
-    except:
-        pass
-
-    date = time.strftime('%A %d %B %Y', time.localtime(t))
-    date = date.decode(locale.getpreferredencoding()).encode('utf8')
-    date = re.sub(' 0',' ',date)
-    return date
-
-
 class Logbook:
 
     def __init__(self,
                  fNameInput, fNameOutput="logbook.xml",
                  verbose=True, localImages=False, startDate = None, endDate = None, refresh = False, excluded = []):
-        self.fIn = open(fNameInput,'r')
+        self.fNameInput = fNameInput 
         self.fXML = open(fNameOutput,"w")
         self.fNameOutput = fNameOutput
         self.verbose = verbose
@@ -198,7 +167,6 @@ class Logbook:
         except:
             print "!!!! Log without image:",logID,day,title,'>>>',status
 
-
     # analyse of the HTML page with all the logs of the geocacher
     # local dump of the web page https://www.geocaching.com/my/logs.aspx?s=1
     def processLogs(self):
@@ -213,14 +181,15 @@ class Logbook:
         days = {}
 
         l = None
-        data = self.fIn.read()
-        tagTable = re.search('<table class="Table">(.*)</table>',data, re.S|re.M).group(1)
+        with open(self.fNameInput,'r') as fIn:
+            cacheData = fIn.read()
+        tagTable = re.search('<table class="Table">(.*)</table>',cacheData, re.S|re.M).group(1)
         tagTr = re.finditer('<tr(.*?)</tr>',tagTable, re.S)
         listTr = [result.group(1) for result in tagTr]
         for tr in listTr:
             td = re.finditer('<td>(.*?)</td>',tr, re.S)
             listTd = [result.group(1) for result in td]
-            dateLog =  normalizeDate(listTd[2].strip())
+            dateLog =  self.__normalizeDate(listTd[2].strip())
             typeLog =  re.search('title="(.*)".*>',listTd[0]).group(1)
             idCache = re.search('guid=(.*?)"',listTd[3]).group(1)
             idLog = re.search('LUID=(.*?)"',listTd[5]).group(1)
@@ -247,7 +216,7 @@ class Logbook:
             if self.endDate and d > self.endDate:
                 continue
             self.nDates += 1
-            self.fXML.write('<date>%s</date>\n'%formatDate(d))
+            self.fXML.write('<date>%s</date>\n'%self.__formatDate(d))
 
             dayLogs = days[d]
             dayLogs.reverse()
@@ -279,6 +248,33 @@ class Logbook:
         print 'Logs: ',self.nLogs,'/',logsCount, 'Days:',self.nDates,'/',len(dates)
         print 'Result file:', self.fNameOutput
 
+    def __formatDate(self, date):
+        strTime = date+" 00:00:01Z"
+        t=0
+        try:
+            t = int(time.mktime(time.strptime(strTime, "%Y/%m/%d %H:%M:%SZ")))
+        except:
+            pass
+        date = time.strftime('%A %d %B %Y', time.localtime(t))
+        date = date.decode(locale.getpreferredencoding()).encode('utf8')
+        date = re.sub(' 0',' ', date)
+        return date
+    
+    def __normalizeDate(self, date):
+        date = re.sub('[-. ]+','/', date)
+        date = re.sub('/+$','', date)
+        (y,m,d) = date.split('/')
+        if int(m) > 12:
+            print "Date format month/day/year not supported. Choose another format in the web site preferences (day/month/year)."
+        if int(d) > 1969:
+            # dd.mm.yyyy
+            d,y = y,d
+        elif int(y) < 1970:
+            # dd.mm.yy
+            d,y = y,int(d)+2000
+        date = '%02d/%02d/%02d'%(int(y), int(m), int(d))
+        return date    
+    
 if __name__=='__main__':
     def usage():
         print 'Usage: python processLogs.py [-q|--quiet] [-l|--local-images] geocaching_logs.html logbook.xml'
