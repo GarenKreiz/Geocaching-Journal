@@ -64,19 +64,13 @@ class Logbook:
         text = ''
         images = {}
         #print 'Log:',idLog,idCache,titleCache,typeLog
-
-        if natureLog == 'C':
-            url = 'seek/cache_'
-            urlLog='seek'
-        else:
-            url = 'track/'
-            urlLog = 'track'
-            # adding the name of the cache where the trackable is, if present in the log
-            tBegin = dataLog.find('cache_details.aspx')
-            if tBegin > 0:
-                tBegin = dataLog.find('>',tBegin)
-                tEnd = dataLog.find('<',tBegin)
-                titleCache = titleCache + ' @ '+ dataLog[tBegin+1:tEnd]
+        
+        url, urlLog = (('seek/cache_', 'seek') if natureLog == 'C' else ('track/', 'track')) 
+        if url == 'track/':    
+            if 'cache_details.aspx' in dataLog:
+                # adding the name of the cache where the trackable is, if present in the log
+                titleTb = re.search('cache_details.aspx\?guid=(.*)">(.*?)</a>',dataLog, re.S).group(2)
+                titleCache = titleCache + ' @ ' + titleTb
         self.fXML.write('<post>%s | http://www.geocaching.com/%sdetails.aspx?guid=%s |'%(titleCache,url,idCache))
         self.fXML.write('%s | http://www.geocaching.com/%s/log.aspx?LUID=%s</post>\n'%(typeLog,urlLog,idLog))
 
