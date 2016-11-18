@@ -80,17 +80,13 @@ class Logbook:
         self.fXML.write('<post>%s | http://www.geocaching.com/%sdetails.aspx?guid=%s |'%(titleCache,url,idCache))
         self.fXML.write('%s | http://www.geocaching.com/%s/log.aspx?LUID=%s</post>\n'%(typeLog,urlLog,idLog))
 
-        tBegin = dataLog.find('_LogText">')
-        if tBegin > 0:
-            tBegin += len('_LogText">')
-            tEnd = dataLog.find('</span>',tBegin)
-            if tEnd > 0:
-                text = dataLog[tBegin:tEnd]
+        if '_LogText">' in dataLog:
+            text = re.search('_LogText">(.*?)</span>',dataLog, re.S).group(1)
         else:
             self.fXML.write('<text> </text>\n')
             print "!!!! Log unavailable",idLog
             return
-        
+
         if self.localImages:
             text = re.sub('src="/images/','src="Images/',text)
         else:
@@ -101,6 +97,8 @@ class Logbook:
         listImages=[]
 
         #g = dataLog.find('_GalleryList"',tEnd)
+        tBegin = dataLog.find('_LogText">')        
+        tEnd = dataLog.find('</span>',tBegin) 
         g = dataLog.find('LogImagePanel',tEnd)
         if g > 0:
             p = dataLog.find('<img ',g+1)
