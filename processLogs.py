@@ -68,11 +68,10 @@ class Logbook:
         #print 'Log:',idLog,idCache,titleCache,typeLog
         
         url, urlLog = (('seek/cache_', 'seek') if natureLog == 'C' else ('track/', 'track')) 
-        if url == 'track/':    
-            if 'cache_details.aspx' in dataLog:
-                # adding the name of the cache where the trackable is, if present in the log
-                titleTb = re.search('cache_details.aspx\?guid=([^>]*)">(.*?)</a>',dataLog, re.S).group(2)   
-                titleCache = titleCache + ' @ ' + titleTb
+        if url == 'track/' and 'cache_details.aspx' in dataLog:
+            # adding the name of the cache where the trackable is, if present in the log
+            titleTb = re.search('cache_details.aspx\?guid=([^>]*)">(.*?)</a>',dataLog, re.S).group(2)   
+            titleCache = titleCache + ' @ ' + titleTb
         self.fXML.write('<post>%s | http://www.geocaching.com/%sdetails.aspx?guid=%s |'%(titleCache,url,idCache))
         self.fXML.write('%s | http://www.geocaching.com/%s/log.aspx?LUID=%s</post>\n'%(typeLog,urlLog,idLog))
 
@@ -193,8 +192,8 @@ class Logbook:
             # keeping the logs that are not excluded by -x option
             #keep = (True if typeLog.lower() in [item.lower() for item in self.excluded] else False)
             #test short string research exclude - ex : -x Write for Write note or -x Found for Found it - etc. 
-            keep = (True if len([excluded for excluded in self.excluded if excluded.lower() in typeLog.lower()]) else False)
-            if not keep and idLog <> '':
+            keepLog = (False if len([excluded for excluded in self.excluded if excluded.lower() in typeLog.lower()]) else True)
+            if keepLog and idLog <> '':
                 logsCount += 1
                 try:
                     days[dateLog].append((idLog,idCache,titleCache,typeLog,natureLog))
