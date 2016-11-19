@@ -44,6 +44,9 @@ bookTitle="""<title>Titre a parametrer<br/> Customizable title</title>"""
 bookDescription="""<description>Description du journal - Logbook description - Fichier a modifier : logbook_header.xml - Modify file : logbook_header.xml</description>"""
 
 class Logbook:
+    """
+    Logbook : generate a list of logs with images for a geocacher
+    """
 
     def __init__(self,
                  fNameInput, fNameOutput="logbook.xml",
@@ -61,8 +64,11 @@ class Logbook:
         self.nDates = 0          # number of processed dates
         self.nLogs = 0           # number of processed logs
 
-    # analyses the HTML content of a log page
     def parseLog(self,dataLog,dateLog,idLog,idCache,titleCache,typeLog,natureLog):
+        """
+        analyses the HTML content of a log page
+        """
+        
         text = ''
         images = {}
         #print 'Log:',idLog,idCache,titleCache,typeLog
@@ -161,9 +167,12 @@ class Logbook:
         except:
             print "!!!! Log without image:",idLog,dateLog,titleCache,'>>>',typeLog
 
-    # analyse of the HTML page with all the logs of the geocacher
-    # local dump of the web page https://www.geocaching.com/my/logs.aspx?s=1
     def processLogs(self):
+        """
+        analyse of the HTML page with all the logs of the geocacher
+        local dump of the web page https://www.geocaching.com/my/logs.aspx?s=1
+        """
+        
         try:
             with open('logbook_header.xml', 'r') as f:
                 self.fXML.write(f.read())
@@ -243,6 +252,10 @@ class Logbook:
         print 'Result file:', self.fNameOutput
 
     def __formatDate(self, date):
+        """
+        format date in readable form, according to local settings
+        """
+        
         strTime = date+" 00:00:01Z"
         t=0
         try:
@@ -255,6 +268,10 @@ class Logbook:
         return date
     
     def __normalizeDate(self, date):
+        """
+        mormalize date in YYYY/MM/DD form
+        """
+        
         date = re.sub('[-. ]+','/', date)
         date = re.sub('/+$','', date)
         (y,m,d) = date.split('/')
