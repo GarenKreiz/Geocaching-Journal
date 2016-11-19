@@ -43,43 +43,12 @@ locale.setlocale(locale.LC_ALL, '')
 bookTitle="""<title>Titre a parametrer<br/> Customizable title</title>"""
 bookDescription="""<description>Description du journal - Logbook description - Fichier a modifier : logbook_header.xml - Modify file : logbook_header.xml</description>"""
 
-def normalizeDate(date):
-    date = re.sub('[-. ]+','/',date)
-    date = re.sub('/+$','',date)
-    (y,m,d) = date.split('/')
-    if int(m) > 12:
-        print "Date format month/day/year not supported. Choose another format in the web site preferences (day/month/year)."
-        sys.exit()
-    if int(d) > 1969:
-        # dd.mm.yyyy
-        d,y = y,d
-    elif int(y) < 1970:
-        # dd.mm.yy
-        d,y = y,int(d)+2000
-    date = '%02d/%02d/%02d'%(int(y),int(m),int(d))
-    return date
-
-
-def formatDate(date):
-    strTime = date+" 00:00:01Z"
-    t=0
-    try:
-        t = int(time.mktime(time.strptime(strTime, "%Y/%m/%d %H:%M:%SZ")))
-    except:
-        pass
-
-    date = time.strftime('%A %d %B %Y', time.localtime(t))
-    date = date.decode(locale.getpreferredencoding()).encode('utf8')
-    date = re.sub(' 0',' ',date)
-    return date
-
-
 class Logbook:
 
     def __init__(self,
                  fNameInput, fNameOutput="logbook.xml",
                  verbose=True, localImages=False, startDate = None, endDate = None, refresh = False, excluded = []):
-        self.fIn = open(fNameInput,'r')
+        self.fNameInput = fNameInput 
         self.fXML = open(fNameOutput,"w")
         self.fNameOutput = fNameOutput
         self.verbose = verbose
@@ -93,36 +62,27 @@ class Logbook:
         self.nLogs = 0           # number of processed logs
 
     # analyses the HTML content of a log page
-    def parseLog(self,data,day,logID,cacheID,title,status,nature):
+    def parseLog(self,dataLog,dateLog,idLog,idCache,titleCache,typeLog,natureLog):
         text = ''
         images = {}
-        #print 'Log:',logID,cacheID,title,status
+        #print 'Log:',idLog,idCache,titleCache,typeLog
+        
+        url, urlLog = (('seek/cache_', 'seek') if natureLog == 'C' else ('track/', 'track')) 
+        if url == 'track/':    
+            if 'cache_details.aspx' in dataLog:
+                # adding the name of the cache where the trackable is, if present in the log
+                titleTb = re.search('cache_details.aspx\?guid=(.*)">(.*?)</a>',dataLog, re.S).group(2)
+                titleCache = titleCache + ' @ ' + titleTb
+        self.fXML.write('<post>%s | http://www.geocaching.com/%sdetails.aspx?guid=%s |'%(titleCache,url,idCache))
+        self.fXML.write('%s | http://www.geocaching.com/%s/log.aspx?LUID=%s</post>\n'%(typeLog,urlLog,idLog))
 
-        if nature == 'C':
-            url = 'seek/cache_'
-            urlLog='seek'
-        else:
-            url = 'track/'
-            urlLog = 'track'
-            # adding the name of the cache where the trackable is, if present in the log
-            tBegin = data.find('cache_details.aspx')
-            if tBegin > 0:
-                tBegin = data.find('>',tBegin)
-                tEnd = data.find('<',tBegin)
-                title = title + ' @ '+ data[tBegin+1:tEnd]
-        self.fXML.write('<post>%s | http://www.geocaching.com/%sdetails.aspx?guid=%s |'%(title,url,cacheID))
-        self.fXML.write('%s | http://www.geocaching.com/%s/log.aspx?LUID=%s</post>\n'%(status,urlLog,logID))
-
-        tBegin = data.find('_LogText">')
-        if tBegin > 0:
-            tBegin += len('_LogText">')
-            tEnd = data.find('</span>',tBegin)
-            if tEnd > 0:
-                text = data[tBegin:tEnd]
+        if '_LogText">' in dataLog:
+            text = re.search('_LogText">(.*?)</span>',dataLog, re.S).group(1)
         else:
             self.fXML.write('<text> </text>\n')
-            print "!!!! Log unavailable",logID
+            print "!!!! Log unavailable",idLog
             return
+
         if self.localImages:
             text = re.sub('src="/images/','src="Images/',text)
         else:
@@ -132,18 +92,20 @@ class Logbook:
         listPanoramas=[]
         listImages=[]
 
-        #g = data.find('_GalleryList"',tEnd)
-        g = data.find('LogImagePanel',tEnd)
+        #g = dataLog.find('_GalleryList"',tEnd)
+        tBegin = dataLog.find('_LogText">')        
+        tEnd = dataLog.find('</span>',tBegin) 
+        g = dataLog.find('LogImagePanel',tEnd)
         if g > 0:
-            p = data.find('<img ',g+1)
+            p = dataLog.find('<img ',g+1)
             while p > 0:
                 # finding the URL of the image
-                sBegin = data.find('src="',p)
-                sEnd = data.find('"',sBegin+5)
-                src = data[sBegin+5:sEnd]
+                sBegin = dataLog.find('src="',p)
+                sEnd = dataLog.find('"',sBegin+5)
+                src = dataLog[sBegin+5:sEnd]
                 if not re.search('(cache|track)/log/',src):
                     print '!!!! Bad image:',src
-                    p = data.find('<img ',p+4)
+                    p = dataLog.find('<img ',p+4)
                     continue
 
                 # normalize form : http://img.geocaching.com/cache/log/display/*.jpg
@@ -155,15 +117,15 @@ class Logbook:
                 # finding the caption of the image
                 patternB = re.compile('<(small|span|strong)[^>]*>')
                 patternE = re.compile('</(small|span|strong)[^>]*>')
-                searchResult = patternB.search(data,sEnd)
+                searchResult = patternB.search(dataLog,sEnd)
                 tBegin = searchResult.end()                  # begin of tag
-                tEnd = patternE.search(data,tBegin).start()  # end of tag
-                caption = re.sub('<[^>]*>','',data[tBegin:tEnd])
+                tEnd = patternE.search(dataLog,tBegin).start()  # end of tag
+                caption = re.sub('<[^>]*>','',dataLog[tBegin:tEnd])
                 if caption.find('Click image to view original') <> -1:
-                    searchResult = patternB.search(data,tEnd+2)
+                    searchResult = patternB.search(dataLog,tEnd+2)
                     tBegin = searchResult.end()                 # begin of tag
-                    tEnd = patternE.search(data,tBegin).start()  # end of tag
-                    caption = re.sub('<[^>]*>','',data[tBegin:tEnd])
+                    tEnd = patternE.search(dataLog,tBegin).start()  # end of tag
+                    caption = re.sub('<[^>]*>','',dataLog[tBegin:tEnd])
                 caption = caption.strip(' \n\r\t')
 
                 # images with "panorama" or "panoramique" in the captin are supposed to be wide pictures
@@ -179,12 +141,12 @@ class Logbook:
                         self.fXML.write("<image>%s<height>480</height><width>640</width><comment>%s</comment></image>\n"%(src,caption))
                         listImages.append(src)
                 try:
-                    images[logID].append((src,caption))
+                    images[idLog].append((src,caption))
                 except:
-                    images[logID] = ((src,caption))
+                    images[idLog] = ((src,caption))
 
                 # goto next image
-                p = data.find('<img alt=',p+1)
+                p = dataLog.find('<img alt=',p+1)
 
             # panoramas are displayed after the other images
             # each on a separate line
@@ -196,10 +158,9 @@ class Logbook:
 
         # identifying logs without image
         try:
-            images[logID][0]
+            images[idLog][0]
         except:
-            print "!!!! Log without image:",logID,day,title,'>>>',status
-
+            print "!!!! Log without image:",idLog,dateLog,titleCache,'>>>',typeLog
 
     # analyse of the HTML page with all the logs of the geocacher
     # local dump of the web page https://www.geocaching.com/my/logs.aspx?s=1
@@ -214,20 +175,21 @@ class Logbook:
         logsCount = 0
         days = {}
 
-        l = None
-        data = self.fIn.read()
-        tagTable = re.search('<table class="Table">(.*)</table>',data, re.S|re.M).group(1)
+        idLog = None
+        with open(self.fNameInput,'r') as fIn:
+            cacheData = fIn.read()
+        tagTable = re.search('<table class="Table">(.*)</table>',cacheData, re.S|re.M).group(1)
         tagTr = re.finditer('<tr(.*?)</tr>',tagTable, re.S)
         listTr = [result.group(1) for result in tagTr]
         for tr in listTr:
             td = re.finditer('<td>(.*?)</td>',tr, re.S)
             listTd = [result.group(1) for result in td]
-            dateLog =  normalizeDate(listTd[2].strip())
+            dateLog =  self.__normalizeDate(listTd[2].strip())
             typeLog =  re.search('title="(.*)".*>',listTd[0]).group(1)
             idCache = re.search('guid=(.*?)"',listTd[3]).group(1)
             idLog = re.search('LUID=(.*?)"',listTd[5]).group(1)
             titleCache =  re.search('</a> <a(.*)?\">(.*)</a>',listTd[3]).group(2).replace('</span>','')
-            logNature =  ('C' if listTd[3].find('cache_details') > 1 else 'T') # C for Cache and T for trackable
+            natureLog =  ('C' if listTd[3].find('cache_details') > 1 else 'T') # C for Cache and T for trackable
             # keeping the logs that are not excluded by -x option
             #keep = (True if typeLog.lower() in [item.lower() for item in self.excluded] else False)
             #test short string research exclude - ex : -x Write for Write note or -x Found for Found it - etc. 
@@ -235,52 +197,79 @@ class Logbook:
             if not keep and idLog <> '':
                 logsCount += 1
                 try:
-                    days[dateLog].append((idLog,idCache,titleCache,typeLog,logNature))
+                    days[dateLog].append((idLog,idCache,titleCache,typeLog,natureLog))
                 except:
-                    days[dateLog] = [(idLog,idCache,titleCache,typeLog,logNature)]
+                    days[dateLog] = [(idLog,idCache,titleCache,typeLog,natureLog)]
                 if self.verbose:
-                    print "%s|%s|%s|%s|%s|%s"%(idLog,dateLog,idCache,titleCache,typeLog,logNature)
+                    print "%s|%s|%s|%s|%s|%s"%(idLog,dateLog,idCache,titleCache,typeLog,natureLog)
         dates = days.keys()
         dates.sort()
-        for d in dates:
+        for dateLog in dates:
             # check if date is in the correct interval
-            if self.startDate and d < self.startDate:
+            if self.startDate and dateLog < self.startDate:
                 continue
-            if self.endDate and d > self.endDate:
+            if self.endDate and dateLog > self.endDate:
                 continue
             self.nDates += 1
-            self.fXML.write('<date>%s</date>\n'%formatDate(d))
+            self.fXML.write('<date>%s</date>\n'%self.__formatDate(dateLog))
 
-            dayLogs = days[d]
+            dayLogs = days[dateLog]
             dayLogs.reverse()
-            for (l,c,t,s,logNature) in dayLogs:
+            for (idLog,idCache,titleCache,typeLog,natureLog) in dayLogs:
                 # logId, cacheId or tbID, title, type, nature
                 # building a local cache of the HTML page of each log
                 # directory: Logs and 16 sub-directories based on the first letter
 
                 # LogsTB dedicated directory for TB logs as ID may be reused between TB and cache logs
-                url, dirLog = (('seek', 'Logs') if logNature == 'C' else ('track', 'LogsTB'))
-                dirLog = dirLog + '/_%s_/'%l[0]
-                if not os.path.isfile(dirLog+l) or self.refresh:
+                url, dirLog = (('seek', 'Logs') if natureLog == 'C' else ('track', 'LogsTB'))
+                dirLog = dirLog + '/_%s_/'%idLog[0]
+                if not os.path.isfile(dirLog+idLog) or self.refresh:
                     if not os.path.isdir(dirLog):
                         print "Creating directory "+dirLog
                         os.makedirs(dirLog)
-                    url = 'http://www.geocaching.com/'+url+'/log.aspx?LUID='+l
+                    url = 'http://www.geocaching.com/'+url+'/log.aspx?LUID='+idLog
                     print "Fetching log",url
-                    data = urllib2.urlopen(url).read()
-                    print "Saving log file "+l
-                    with open(dirLog+l,'w') as fw:
-                        fw.write(data)
+                    dataLog = urllib2.urlopen(url).read()
+                    print "Saving log file "+idLog
+                    with open(dirLog+idLog,'w') as fw:
+                        fw.write(dataLog)
                 else:
-                    with open(dirLog+l,'r') as fr:
-                        data = fr.read()
+                    with open(dirLog+idLog,'r') as fr:
+                        dataLog = fr.read()
                 # grabbing information from the log page
-                self.parseLog(data,d,l,c,t,s,logNature)
+                self.parseLog(dataLog,dateLog,idLog,idCache,titleCache,typeLog,natureLog)
 
         self.fXML.write('<date>Source : GarenKreiz/Geocaching-Journal @ GitHub (CC BY-NC 3.0 FR)</date>\n')
         print 'Logs: ',self.nLogs,'/',logsCount, 'Days:',self.nDates,'/',len(dates)
         print 'Result file:', self.fNameOutput
 
+    def __formatDate(self, date):
+        strTime = date+" 00:00:01Z"
+        t=0
+        try:
+            t = int(time.mktime(time.strptime(strTime, "%Y/%m/%d %H:%M:%SZ")))
+        except:
+            pass
+        date = time.strftime('%A %d %B %Y', time.localtime(t))
+        date = date.decode(locale.getpreferredencoding()).encode('utf8')
+        date = re.sub(' 0',' ', date)
+        return date
+    
+    def __normalizeDate(self, date):
+        date = re.sub('[-. ]+','/', date)
+        date = re.sub('/+$','', date)
+        (y,m,d) = date.split('/')
+        if int(m) > 12:
+            print "Date format month/day/year not supported. Choose another format in the web site preferences (day/month/year)."
+        if int(d) > 1969:
+            # dd.mm.yyyy
+            d,y = y,d
+        elif int(y) < 1970:
+            # dd.mm.yy
+            d,y = y,int(d)+2000
+        date = '%02d/%02d/%02d'%(int(y), int(m), int(d))
+        return date    
+    
 if __name__=='__main__':
     def usage():
         print 'Usage: python processLogs.py [-q|--quiet] [-l|--local-images] geocaching_logs.html logbook.xml'
