@@ -71,7 +71,7 @@ class Logbook:
         if url == 'track/':    
             if 'cache_details.aspx' in dataLog:
                 # adding the name of the cache where the trackable is, if present in the log
-                titleTb = re.search('cache_details.aspx\?guid=(.*)">(.*?)</a>',dataLog, re.S).group(2)
+                titleTb = re.search('cache_details.aspx\?guid=([^>]*)">(.*?)</a>',dataLog, re.S).group(2)   
                 titleCache = titleCache + ' @ ' + titleTb
         self.fXML.write('<post>%s | http://www.geocaching.com/%sdetails.aspx?guid=%s |'%(titleCache,url,idCache))
         self.fXML.write('%s | http://www.geocaching.com/%s/log.aspx?LUID=%s</post>\n'%(typeLog,urlLog,idLog))
