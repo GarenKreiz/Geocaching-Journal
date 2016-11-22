@@ -128,7 +128,7 @@ class Logbook(object):
         """
 
         try:
-            with open('logbook_header.xml', 'r') as f:
+            with codecs.open('logbook_header.xml', 'r', 'utf-8') as f:
                 self.fXML.write(f.read())
         except:
             self.fXML.write('<title>'+bookTitle+'</title>\n')
