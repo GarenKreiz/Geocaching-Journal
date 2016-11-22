@@ -94,76 +94,35 @@ class Logbook(object):
         self.fXML.write('<text>%s</text>\n'%text)
 
         listPanoramas = []
-        listImages = []
+        listeImages = []
+        
+        if 'LogBookPanel1_GalleryList' in dataLog: #if Additional images
+            tagTable = re.search('<table id="ctl00_ContentBody_LogBookPanel1_GalleryList(.*?)</table>',dataLog, re.S).group(0)
+            title = re.findall('<img alt=\'(.*?)\' src', tagTable, re.S)
+            title = [re.sub(' log image', "", result) for result in title]    
+            url = re.findall('src="(.*?)" />', tagTable, re.S)    
+            url = [re.sub('log/.*/', "log/display/", result) for result in url] # normalize form : http://img.geocaching.com/cache/log/display/*.jpg
+            for index, tag in enumerate(url):
+                panora = self.__isPanoramaExist(title[index])
+                listeImages.append((url[index], title[index], panora))
+        elif 'LogBookPanel1_ImageMain' in dataLog: #if single images
+            urlTitle = re.search('id="ctl00_ContentBody_LogBookPanel1_ImageMain(.*?)href="(.*?)" target(.*?)span class="logimg-caption">(.*?)</span><span>',dataLog, re.S)
+            panora = self.__isPanoramaExist(urlTitle.group(4))    
+            listeImages.append((urlTitle.group(2), urlTitle.group(4), panora))
+        else:
+            print '!!!! Log without image', idLog,dateLog,titleCache,'>>>',typeLog
 
-        tBegin = dataLog.find('_LogText">')
-        tEnd = dataLog.find('</span>', tBegin)
-        g = dataLog.find('LogImagePanel', tEnd)
-        if g > 0:
-            p = dataLog.find('<img ', g+1)
-            while p > 0:
-                # finding the URL of the image
-                sBegin = dataLog.find('src="', p)
-                sEnd = dataLog.find('"', sBegin+5)
-                src = dataLog[sBegin+5:sEnd]
-                if not re.search('(cache|track)/log/', src):
-                    print '!!!! Bad image:', src
-                    p = dataLog.find('<img ', p+4)
-                    continue
+        listeImages.sort(key=lambda e: e[2]) # panoramas are displayed after the other images - sort by field panora
 
-                # normalize form : http://img.geocaching.com/cache/log/display/*.jpg
-                if self.localImages:
-                    src = re.sub('.*(thumb|display)', 'Images', src)     # to use if there is a local cache of images
-                else:
-                    src = re.sub('thumb', 'display', src)                # to use to access images on geocaching site
+        for log in listeImages:
+            typeImage = ('pano' if log[2] else 'image')
+            # at this point, no information is available on the size of image
+            # assume a standard format 640x480 (nostalgia of the 80's?)            
+            self.fXML.write("<%s>%s<height>480</height><width>640</width><comment>%s</comment></%s>\n"%(typeImage,log[0],log[1],typeImage))
 
-                # finding the caption of the image
-                patternB = re.compile('<(small|span|strong)[^>]*>')
-                patternE = re.compile('</(small|span|strong)[^>]*>')
-                searchResult = patternB.search(dataLog, sEnd)
-                tBegin = searchResult.end()                  # begin of tag
-                tEnd = patternE.search(dataLog, tBegin).start()  # end of tag
-                caption = re.sub('<[^>]*>', '', dataLog[tBegin:tEnd])
-                if caption.find('Click image to view original') <> -1:
-                    searchResult = patternB.search(dataLog, tEnd+2)
-                    tBegin = searchResult.end()                 # begin of tag
-                    tEnd = patternE.search(dataLog, tBegin).start()  # end of tag
-                    caption = re.sub('<[^>]*>', '', dataLog[tBegin:tEnd])
-                caption = caption.strip(' \n\r\t')
-
-                # images with "panorama" or "panoramique" in the captin are supposed to be wide pictures
-                if re.search('panoram', caption, re.IGNORECASE):
-                    src = re.sub('/log/display/', '/log/', src)     # use full size image for panorama
-
-                    if (src, caption) not in listPanoramas:
-                        listPanoramas.append((src, caption))
-                else:
-                    if not src in listImages:
-                        # at this point, no information is available on the size of image
-                        # assume a standard format 640x480 (nostalgia of the 80's?)
-                        self.fXML.write("<image>%s<height>480</height><width>640</width><comment>%s</comment></image>\n"%(src, caption))
-                        listImages.append(src)
-                try:
-                    images[idLog].append((src, caption))
-                except:
-                    images[idLog] = ((src, caption))
-
-                # goto next image
-                p = dataLog.find('<img alt=', p+1)
-
-            # panoramas are displayed after the other images
-            # each on a separate line
-            if listPanoramas <> []:
-                for (src, caption) in listPanoramas:
-                    self.fXML.write("<pano>%s<height>480</height><width>640</width><comment>%s</comment></pano>\n"%(src, caption))
-
-        self.nLogs += 1
-
-        # identifying logs without image
-        try:
-            images[idLog][0]
-        except:
-            print "!!!! Log without image:", idLog, dateLog, titleCache, '>>>', typeLog
+    # images with "panorama" or "panoramique" in the caption are supposed to be wide pictures
+    def __isPanoramaExist(self, title):
+        return (True if re.search('panorama', title, re.IGNORECASE) else False)
 
     def processLogs(self):
         """
