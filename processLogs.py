@@ -81,16 +81,15 @@ class Logbook(object):
 
         if '_LogText">' in dataLog:
             text = re.search('_LogText">(.*?)</span>', dataLog, re.S).group(1)
+            if self.localImages:
+                text = re.sub('src="/images/', 'src="Images/', text)
+            else:
+                    text = re.sub('src="/images/', 'src="http://www.geocaching.com/images/', text)
+            self.fXML.write('<text>%s</text>\n'%text)            
         else:
             self.fXML.write('<text> </text>\n')
             print "!!!! Log unavailable", idLog
             return
-
-        if self.localImages:
-            text = re.sub('src="/images/', 'src="Images/', text)
-        else:
-            text = re.sub('src="/images/', 'src="http://www.geocaching.com/images/', text)
-        self.fXML.write('<text>%s</text>\n'%text)
 
         listeImages = []
         
