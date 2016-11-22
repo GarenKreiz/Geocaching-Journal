@@ -70,7 +70,6 @@ class Logbook(object):
         """
 
         text = ''
-        images = {}
 
         url, urlLog = (('seek/cache_', 'seek') if natureLog == 'C' else ('track/', 'track'))
         if url == 'track/' and 'cache_details.aspx' in dataLog:
@@ -93,7 +92,6 @@ class Logbook(object):
             text = re.sub('src="/images/', 'src="http://www.geocaching.com/images/', text)
         self.fXML.write('<text>%s</text>\n'%text)
 
-        listPanoramas = []
         listeImages = []
         
         if 'LogBookPanel1_GalleryList' in dataLog: #if Additional images
