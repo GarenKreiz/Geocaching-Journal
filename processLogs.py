@@ -33,7 +33,7 @@ import sys
 import time
 import locale
 import urllib2
-
+import codecs
 
 #os.environ['LC_ALL'] = 'fr_FR.UTF-8'
 #locale.setlocale(locale.LC_ALL, 'fr_FR.UTF-8')
@@ -52,8 +52,8 @@ class Logbook(object):
                  fNameInput, fNameOutput="logbook.xml",
                  verbose=True, localImages=False, startDate=None, endDate=None, refresh=False, excluded=[]):
         self.fNameInput = fNameInput
-        self.fXML = open(fNameOutput, "w")
         self.fNameOutput = fNameOutput
+        self.fXML = codecs.open(fNameOutput, "w", 'utf-8')        
         self.verbose = verbose
         self.localImages = localImages
         self.startDate = startDate
@@ -70,7 +70,6 @@ class Logbook(object):
         """
 
         text = ''
-        images = {}
 
         url, urlLog = (('seek/cache_', 'seek') if natureLog == 'C' else ('track/', 'track'))
         if url == 'track/' and 'cache_details.aspx' in dataLog:
@@ -82,88 +81,45 @@ class Logbook(object):
 
         if '_LogText">' in dataLog:
             text = re.search('_LogText">(.*?)</span>', dataLog, re.S).group(1)
+            if self.localImages:
+                text = re.sub('src="/images/', 'src="Images/', text)
+            else:
+                    text = re.sub('src="/images/', 'src="http://www.geocaching.com/images/', text)
+            self.fXML.write('<text>%s</text>\n'%text)            
         else:
             self.fXML.write('<text> </text>\n')
             print "!!!! Log unavailable", idLog
             return
 
-        if self.localImages:
-            text = re.sub('src="/images/', 'src="Images/', text)
+        listeImages = []
+        
+        if 'LogBookPanel1_GalleryList' in dataLog: #if Additional images
+            tagTable = re.search('<table id="ctl00_ContentBody_LogBookPanel1_GalleryList(.*?)</table>',dataLog, re.S).group(0)
+            title = re.findall('<img alt=\'(.*?)\' src', tagTable, re.S)
+            title = [re.sub(' log image', "", result) for result in title]    
+            url = re.findall('src="(.*?)" />', tagTable, re.S)    
+            url = [re.sub('log/.*/', "log/display/", result) for result in url] # normalize form : http://img.geocaching.com/cache/log/display/*.jpg
+            for index, tag in enumerate(url):
+                panora = self.__isPanorama(title[index])
+                listeImages.append((url[index], title[index], panora))
+        elif 'LogBookPanel1_ImageMain' in dataLog: #if single images
+            urlTitle = re.search('id="ctl00_ContentBody_LogBookPanel1_ImageMain(.*?)href="(.*?)" target(.*?)span class="logimg-caption">(.*?)</span><span>',dataLog, re.S)
+            panora = self.__isPanorama(urlTitle.group(4))    
+            listeImages.append((urlTitle.group(2), urlTitle.group(4), panora))
         else:
-            text = re.sub('src="/images/', 'src="http://www.geocaching.com/images/', text)
-        self.fXML.write('<text>%s</text>\n'%text)
+            print '!!!! Log without image', idLog,dateLog,titleCache,'>>>',typeLog
 
-        listPanoramas = []
-        listImages = []
+        listeImages.sort(key=lambda e: e[2]) # panoramas are displayed after the other images - sort by field panora
 
-        tBegin = dataLog.find('_LogText">')
-        tEnd = dataLog.find('</span>', tBegin)
-        g = dataLog.find('LogImagePanel', tEnd)
-        if g > 0:
-            p = dataLog.find('<img ', g+1)
-            while p > 0:
-                # finding the URL of the image
-                sBegin = dataLog.find('src="', p)
-                sEnd = dataLog.find('"', sBegin+5)
-                src = dataLog[sBegin+5:sEnd]
-                if not re.search('(cache|track)/log/', src):
-                    print '!!!! Bad image:', src
-                    p = dataLog.find('<img ', p+4)
-                    continue
+        for log in listeImages:
+            typeImage = ('pano' if log[2] else 'image')
+            # at this point, no information is available on the size of image
+            # assume a standard format 640x480 (nostalgia of the 80's?)            
+            self.fXML.write("<%s>%s<height>480</height><width>640</width><comment>%s</comment></%s>\n"%(typeImage,log[0],log[1],typeImage))
 
-                # normalize form : http://img.geocaching.com/cache/log/display/*.jpg
-                if self.localImages:
-                    src = re.sub('.*(thumb|display)', 'Images', src)     # to use if there is a local cache of images
-                else:
-                    src = re.sub('thumb', 'display', src)                # to use to access images on geocaching site
-
-                # finding the caption of the image
-                patternB = re.compile('<(small|span|strong)[^>]*>')
-                patternE = re.compile('</(small|span|strong)[^>]*>')
-                searchResult = patternB.search(dataLog, sEnd)
-                tBegin = searchResult.end()                  # begin of tag
-                tEnd = patternE.search(dataLog, tBegin).start()  # end of tag
-                caption = re.sub('<[^>]*>', '', dataLog[tBegin:tEnd])
-                if caption.find('Click image to view original') <> -1:
-                    searchResult = patternB.search(dataLog, tEnd+2)
-                    tBegin = searchResult.end()                 # begin of tag
-                    tEnd = patternE.search(dataLog, tBegin).start()  # end of tag
-                    caption = re.sub('<[^>]*>', '', dataLog[tBegin:tEnd])
-                caption = caption.strip(' \n\r\t')
-
-                # images with "panorama" or "panoramique" in the captin are supposed to be wide pictures
-                if re.search('panoram', caption, re.IGNORECASE):
-                    src = re.sub('/log/display/', '/log/', src)     # use full size image for panorama
-
-                    if (src, caption) not in listPanoramas:
-                        listPanoramas.append((src, caption))
-                else:
-                    if not src in listImages:
-                        # at this point, no information is available on the size of image
-                        # assume a standard format 640x480 (nostalgia of the 80's?)
-                        self.fXML.write("<image>%s<height>480</height><width>640</width><comment>%s</comment></image>\n"%(src, caption))
-                        listImages.append(src)
-                try:
-                    images[idLog].append((src, caption))
-                except:
-                    images[idLog] = ((src, caption))
-
-                # goto next image
-                p = dataLog.find('<img alt=', p+1)
-
-            # panoramas are displayed after the other images
-            # each on a separate line
-            if listPanoramas <> []:
-                for (src, caption) in listPanoramas:
-                    self.fXML.write("<pano>%s<height>480</height><width>640</width><comment>%s</comment></pano>\n"%(src, caption))
-
-        self.nLogs += 1
-
-        # identifying logs without image
-        try:
-            images[idLog][0]
-        except:
-            print "!!!! Log without image:", idLog, dateLog, titleCache, '>>>', typeLog
+    # images with "panorama" or "panoramique" in the caption are supposed to be wide pictures
+    def __isPanorama(self, title):
+        return (True if re.search('panoram', title, re.IGNORECASE) else False)
 
     def processLogs(self):
         """
@@ -172,7 +128,7 @@ class Logbook(object):
         """
 
         try:
-            with open('logbook_header.xml', 'r') as f:
+            with codecs.open('logbook_header.xml', 'r', 'utf-8') as f:
                 self.fXML.write(f.read())
         except:
             self.fXML.write('<title>'+bookTitle+'</title>\n')
@@ -182,7 +138,7 @@ class Logbook(object):
         days = {}
 
         idLog = None
-        with open(self.fNameInput, 'r') as fIn:
+        with codecs.open(self.fNameInput, 'r', 'utf-8') as fIn:
             cacheData = fIn.read()
         tagTable = re.search('<table class="Table">(.*)</table>', cacheData, re.S|re.M).group(1)
         tagTr = re.finditer('<tr(.*?)</tr>', tagTable, re.S)
@@ -235,12 +191,14 @@ class Logbook(object):
                         os.makedirs(dirLog)
                     url = 'http://www.geocaching.com/'+url+'/log.aspx?LUID='+idLog
                     print "Fetching log", url
-                    dataLog = urllib2.urlopen(url).read()
+                    dataLog = urllib2.urlopen(url).read().decode('utf-8')
                     print "Saving log file "+idLog
-                    with open(dirLog+idLog, 'w') as fw:
+                    with codecs.open(dirLog+idLog, 'w', 'utf-8') as fw:
                         fw.write(dataLog)
                 else:
-                    with open(dirLog+idLog, 'r') as fr:
+                    with codecs.open(dirLog+idLog, 'r', 'utf-8') as fr:
+                        if self.verbose:
+                            print "Loading for cache " + titleCache
                         dataLog = fr.read()
                 # grabbing information from the log page
                 self.parseLog(dataLog, dateLog, idLog, idCache, titleCache, typeLog, natureLog)
@@ -263,7 +221,7 @@ class Logbook(object):
         date = time.strftime('%A %d %B %Y', time.localtime(t))
         date = date.decode(locale.getpreferredencoding()).encode('utf8')
         date = re.sub(' 0', ' ', date)
-        return date
+        return date.decode('utf-8')
 
     def __normalizeDate(self, date):
         """
