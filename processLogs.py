@@ -198,6 +198,7 @@ class Logbook(object):
                         fw.write(dataLog)
                 else:
                     with codecs.open(dirLog+idLog, 'r', 'utf-8') as fr:
+                        print "Loading from cache" + titleCache                        
                         dataLog = fr.read()
                 # grabbing information from the log page
                 self.parseLog(dataLog, dateLog, idLog, idCache, titleCache, typeLog, natureLog)
