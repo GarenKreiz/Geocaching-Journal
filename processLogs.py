@@ -50,12 +50,11 @@ class Logbook(object):
 
     def __init__(self,
                  fNameInput, fNameOutput="logbook.xml",
-                 verbose=True, localImages=False, startDate=None, endDate=None, refresh=False, excluded=[]):
+                 verbose=True, startDate=None, endDate=None, refresh=False, excluded=[]):
         self.fNameInput = fNameInput
         self.fNameOutput = fNameOutput
         self.fXML = codecs.open(fNameOutput, "w", 'utf-8')        
         self.verbose = verbose
-        self.localImages = localImages
         self.startDate = startDate
         self.endDate = endDate
         self.refresh = refresh
@@ -81,10 +80,7 @@ class Logbook(object):
 
         if '_LogText">' in dataLog:
             text = re.search('_LogText">(.*?)</span>', dataLog, re.S).group(1)
-            if self.localImages:
-                text = re.sub('src="/images/', 'src="Images/', text)
-            else:
-                    text = re.sub('src="/images/', 'src="http://www.geocaching.com/images/', text)
+            text = re.sub('src="/images/', 'src="http://www.geocaching.com/images/', text)
             self.fXML.write('<text>%s</text>\n'%text)            
         else:
             self.fXML.write('<text> </text>\n')
@@ -244,8 +240,8 @@ class Logbook(object):
 
 if __name__ == '__main__':
     def usage():
-        print 'Usage: python processLogs.py [-q|--quiet] [-l|--local-images] geocaching_logs.html logbook.xml'
-        print '    or python processLogs.py [-q|--quiet] [-l|--local-images] geocaching_logs.html logbook.html'
+        print 'Usage: python processLogs.py [-q|--quiet] geocaching_logs.html logbook.xml'
+        print '    or python processLogs.py [-q|--quiet] geocaching_logs.html logbook.html'
         print ''
         print '   geocaching_logs.html'
         print '       dump of the web page containing all you logs (HTML only)'
@@ -260,9 +256,6 @@ if __name__ == '__main__':
         print '   -q|--quiet'
         print '       less verbose console output'
         print '       execution du programme moins verbeuse'
-        print '   -l|--local-images'
-        print '       use local images in directory Images (previously downloaded for example using "wget")'
-        print '       utilisation d\'une copie locale des images dans le repertoire Images (telechargees par exemple avec "wget")'
         print '   -s|--start startDate'
         print '       start processing log at date startDate (included, format YYYY/MM/DD)'
         print '       commence le traitement des logs a partir de la date startDate incluse (format AAAA/MM/JJ)'
@@ -281,12 +274,11 @@ if __name__ == '__main__':
     import getopt
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "hrqls:e:x:", ['help', 'refresh', 'quiet', 'local-images', 'start', 'end', 'exclude'])
+        opts, args = getopt.getopt(sys.argv[1:], "hrqs:e:x:", ['help', 'refresh', 'quiet', 'start', 'end', 'exclude'])
     except getopt.GetoptError:
         usage()
 
     verbose = True
-    localImages = False
     startDate = None
     endDate = None
     refresh = False
@@ -299,8 +291,6 @@ if __name__ == '__main__':
             verbose = False
         elif opt == "-r":
             refresh = True
-        elif opt == "-l":
-            localImages = True
         elif opt == "-s":
             if len(arg.split('/')) <> 3:
                 print "!!! Bad start date format, use YYYY/MM/DD"
@@ -328,7 +318,7 @@ if __name__ == '__main__':
 
         # firt phase : from Groundspeak HTML to XML
         if re.search(".htm[l]*", args[0], re.IGNORECASE):
-            Logbook(args[0], xmlFile, verbose, localImages, startDate, endDate, refresh, excluded).processLogs()
+            Logbook(args[0], xmlFile, verbose, startDate, endDate, refresh, excluded).processLogs()
 
         # second phase : from XML to generated HTML
         if re.search(".htm[l]*", args[1], re.IGNORECASE):
