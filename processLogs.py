@@ -33,7 +33,7 @@ import sys
 import time
 import locale
 import urllib2
-
+import codecs
 
 #os.environ['LC_ALL'] = 'fr_FR.UTF-8'
 #locale.setlocale(locale.LC_ALL, 'fr_FR.UTF-8')
@@ -52,8 +52,8 @@ class Logbook(object):
                  fNameInput, fNameOutput="logbook.xml",
                  verbose=True, localImages=False, startDate=None, endDate=None, refresh=False, excluded=[]):
         self.fNameInput = fNameInput
-        self.fXML = open(fNameOutput, "w")
         self.fNameOutput = fNameOutput
+        self.fXML = codecs.open(fNameOutput, "w", 'utf-8')        
         self.verbose = verbose
         self.localImages = localImages
         self.startDate = startDate
@@ -139,7 +139,7 @@ class Logbook(object):
         days = {}
 
         idLog = None
-        with open(self.fNameInput, 'r') as fIn:
+        with codecs.open(self.fNameInput, 'r', 'utf-8') as fIn:
             cacheData = fIn.read()
         tagTable = re.search('<table class="Table">(.*)</table>', cacheData, re.S|re.M).group(1)
         tagTr = re.finditer('<tr(.*?)</tr>', tagTable, re.S)
@@ -192,12 +192,12 @@ class Logbook(object):
                         os.makedirs(dirLog)
                     url = 'http://www.geocaching.com/'+url+'/log.aspx?LUID='+idLog
                     print "Fetching log", url
-                    dataLog = urllib2.urlopen(url).read()
+                    dataLog = urllib2.urlopen(url).read().decode('utf-8')
                     print "Saving log file "+idLog
-                    with open(dirLog+idLog, 'w') as fw:
+                    with codecs.open(dirLog+idLog, 'w', 'utf-8') as fw:
                         fw.write(dataLog)
                 else:
-                    with open(dirLog+idLog, 'r') as fr:
+                    with codecs.open(dirLog+idLog, 'r', 'utf-8') as fr:
                         dataLog = fr.read()
                 # grabbing information from the log page
                 self.parseLog(dataLog, dateLog, idLog, idCache, titleCache, typeLog, natureLog)
@@ -220,7 +220,7 @@ class Logbook(object):
         date = time.strftime('%A %d %B %Y', time.localtime(t))
         date = date.decode(locale.getpreferredencoding()).encode('utf8')
         date = re.sub(' 0', ' ', date)
-        return date
+        return date.decode('utf-8')
 
     def __normalizeDate(self, date):
         """
