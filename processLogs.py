@@ -40,8 +40,8 @@ import codecs
 locale.setlocale(locale.LC_ALL, '')
 
 # default title and description of the logbook (should be in logbook_header.xml)
-bookTitle = """<title>Titre a parametrer<br/> Customizable title</title>"""
-bookDescription = """<description>Description du journal - Logbook description - Fichier a modifier : logbook_header.xml - Modify file : logbook_header.xml</description>"""
+bookTitle = u"""<title>Titre à parametrer<br/> Customizable title</title>"""
+bookDescription = u"""<description>Description du journal - Logbook description - Fichier à modifier : logbook_header.xml - Modify file : logbook_header.xml</description>"""
 
 class Logbook(object):
     """
@@ -127,8 +127,9 @@ class Logbook(object):
             with codecs.open('logbook_header.xml', 'r', 'utf-8') as f:
                 self.fXML.write(f.read())
         except:
-            self.fXML.write('<title>'+bookTitle+'</title>\n')
-            self.fXML.write('<description>'+bookDescription+'</description>\n')
+
+            self.fXML.write('<title>' + bookTitle + '</title>\n')
+            self.fXML.write('<description>' + bookDescription + '</description>\n')
 
         logsCount = 0
         days = {}
