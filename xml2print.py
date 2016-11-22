@@ -1,5 +1,6 @@
 #!python
 # -*- coding: utf-8 -*-
+"""
 ################################################################################
 # xml2print.py
 #
@@ -7,7 +8,7 @@
 #
 #     tags : title, description, date, post, text, image, pano
 #
-# Copyright GarenKreiz at  geocaching.com or on  YouTube 
+# Copyright GarenKreiz at  geocaching.com or on  YouTube
 # Auteur    GarenKreiz sur geocaching.com ou sur YouTube
 #
 # Licence:
@@ -24,22 +25,13 @@
 #   You should have received a copy of the GNU General Public License
 #   along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #
+"""
 
-import os
 import re
 import sys
-import time
 import string
 
 maxRow = 3   # number of pictures in a row (less than 4)
-limits = {   # size of pictures changing with number in rows
-    1 : { 'H':100, 'V': 50, 'P':200 },
-    2 : { 'H': 50, 'V': 25, 'P':200 },
-    3 : { 'H': 52, 'V': 38, 'P':200 },
-    4 : { 'H': 52, 'V': 38, 'P':200 },
-}
-printing = False
-cleaningComment = False
 
 headerStart = """<!DOCTYPE html>
 <html>
@@ -64,111 +56,103 @@ function popstatic(url,windowName)
 </script>
 """
 
-headerMiddle="""
+headerMiddle = """
 <link rel="stylesheet" type="text/css" href="logbook.css" media="all">
 </head>
 <body>
-<div class="header">  
+<div class="header">
 <h1>%s</h1>
 """
 
-headerEnd="""
+headerEnd = """
 <p class="description"><i>%s</i></p>
 </div> <!-- header -->
 <div class="main">
 """
 
-articleBegin="""
+articleBegin = """
 """
 
-dateFormat="""
+dateFormat = """
 <div class="date">
 <h2 class="date-header">%s</h2>
 <div class="post-entry">
 """
 
-postBegin="""
+postBegin = """
 <h3 class="post-title">
 """
 
-postMiddle="""
+postMiddle = """
 </h3>
 """
 
-postBanner="""
+postBanner = """
 <div class="post-banner"></div>
 <div class="post-entry">
 """
 
-postEnd="""
+postEnd = """
 </div>  <!--// class:post-entry //-->
 """
 
-dateEnd="""
+dateEnd = """
 </div>  <!--// class:date //-->
-"""        
+"""
 
-htmlEnd="""
+htmlEnd = """
 </body>
 </html>
 """
 
-pictureFormatTemplate="""
+pictureFormatTemplate = """
 <table class="picture" style="%s"><tbody>
 <tr><td>%s<img %s src="%s">%s</td></tr>
 <tr><td class="caption">%s</td></tr></tbody></table>
 """
 
-pictureFormat = pictureFormatTemplate%('','%s','','%s','%s','%s')
-#pictureFormatHorizontal = pictureFormatTemplate%('','%s','height="%d"' % ( 519/maxRow),'%s','%s','%s')
-#pictureFormatVertical   = pictureFormatTemplate%('width: %dpx;'%( 519/maxRow), '%s','height="%d"'   % ( 692/maxRow),'%s','%s','%s')
-#pictureFormatPanorama   = pictureFormatTemplate%('', '%s','width="%dpx" '% 735 ,'%s','%s','%s')
-pictureFormatHorizontal = pictureFormatTemplate%('','%s','','%s','%s','%s')
-pictureFormatVertical   = pictureFormatTemplate%('', '%s','','%s','%s','%s')
-pictureFormatPanorama   = pictureFormatTemplate%('', '%s','style="max-width=%dpx;" '% 748 ,'%s','%s','%s')
-pictureFormatPanorama   = pictureFormatTemplate%('', '%s','class="panorama"','%s','%s','%s')
+pictureFormat = pictureFormatTemplate%('', '%s', '', '%s', '%s', '%s')
+#pictureFormatHorizontal = pictureFormatTemplate%('', '%s', 'height="%d"' % ( 519/maxRow), '%s', '%s', '%s')
+#pictureFormatVertical   = pictureFormatTemplate%('width: %dpx;'%( 519/maxRow), '%s', 'height="%d"'   % ( 692/maxRow), '%s', '%s', '%s')
+#pictureFormatPanorama   = pictureFormatTemplate%('', '%s', 'width="%dpx" '% 735 , '%s', '%s', '%s')
+pictureFormatHorizontal = pictureFormatTemplate%('', '%s', '', '%s', '%s', '%s')
+pictureFormatVertical   = pictureFormatTemplate%('', '%s', '', '%s', '%s', '%s')
+pictureFormatPanorama   = pictureFormatTemplate%('', '%s', 'style="max-width=%dpx;" '% 748 , '%s', '%s', '%s')
+pictureFormatPanorama   = pictureFormatTemplate%('', '%s', 'class="panorama"', '%s', '%s', '%s')
 
-rowCount = 0   # current number of images in row
 pictures = []
 fOut = None
 
-# cleaning text from HTML formatting
-def cleanText(buffer,all=True):
-    resu = re.sub('</*(tbody|table|div|text)[ /]*>',' ',buffer)
-    resu = re.sub('</*div>'                      ,'',resu)
-    resu = re.sub('<div[^>]*>'                   ,'',resu)
-    resu = re.sub('[\n\r]*'                      ,'',resu)
-    resu = re.sub('  *'                          ,' ',resu)
-    if all:
-        resu = re.sub('<[^>]*>','',resu)
+def cleanText(textInput, allTags=True):
+    """
+    cleaning text from HTML formatting
+    """
+    resu = re.sub('</*(tbody|table|div|text)[ /]*>', ' ', textInput)
+    resu = re.sub('</*div>'                        , '',  resu)
+    resu = re.sub('<div[^>]*>'                     , '',  resu)
+    resu = re.sub('[\n\r]*'                        , '',  resu)
+    resu = re.sub('  *'                            , ' ', resu)
+    if allTags:
+        resu = re.sub('<[^>]*>', '', resu)
     return resu
 
-# end of a row of images
 def flushImgTable():
-    global printing, cleaningComment
+    """
+    end of a row of images
+    """
 
-    global maxRow, rowCount, pictures, fOut, maxWidth
+    global pictures
 
     if len(pictures) == 0:
         return
-    
+
     fOut.write('<table class="table-pictures"><tr>')
-    for (d,image,comment,width,height) in pictures:
+    for (d, image, comment, width, height) in pictures:
         fOut.write('<td>')
-        nbCommentRows = maxWidth[d] / limits[maxRow][d]
-        if not cleaningComment:
-            if printing:
-                comment = re.sub('&pad;','<br>&nbsp;',comment)
-            else:
-                comment = re.sub('&pad;','',comment)
-        if cleaningComment and maxWidth[d] > limits[maxRow][d]:
-            i = len(comment)
-            while i < nbCommentRows * limits[maxRow][d]:
-                comment += '<br>&nbsp;'
-                i += limits[maxRow][d]
+        comment = re.sub('&pad;', '', comment)
 
         # specific to geocaching logs : open a full sized view of picture
-        imageFullSize = re.sub('https://img.geocaching.com/cache/log/display/','https://img.geocaching.com/cache/log/',image)
+        imageFullSize = re.sub('https://img.geocaching.com/cache/log/display/', 'https://img.geocaching.com/cache/log/', image)
         popupLink = '<a href="javascript:popstatic(\'%s\',\'.\');">'%imageFullSize
         if comment == '__EMPTY__':
             fOut.write('<td></td>')
@@ -178,156 +162,139 @@ def flushImgTable():
             fOut.write(pictureFormatHorizontal % (popupLink, image, '</a>', comment))
         elif d == 'P':
             fOut.write(pictureFormatPanorama   % (popupLink, image, '</a>', comment))
-        comment = re.sub('<br>','',comment)
+        comment = re.sub('<br>', '', comment)
         fOut.write('</td>')
     fOut.write('</tr></table>')
-        
-    maxWidth= { 'H':0, 'V':0, 'P':0 }
-    rowCount = 0
+
     pictures = []
 
-def flushPost():
-    global fOut
-    fOut.write(postEnd)
 
-def flushDate():
-    global fOut
-    fOut.write(dateEnd)
-    
 def flushText(text):
-    global fOut
+    """
+    flushing text as HTML paragraph
+    """
+
     if text:
-        if text.find('<p>') <> 0:
+        if '<p>' not in text[0:10]:
             text = '<p>'+text+'</p>'
         fOut.write(text)
 
-################################################################################
-# processFile
-#    
-	
-def processFile(fichier):
 
-    global limits, maxRow, fOut, pictures, maxWidth
-    
-    result = ''
+def processFile(fichier, printing=False):
+    """
+    analyse of a description file in XML and generate an HTML file
+    """
+
+    global pictures
 
     firstDate = True
     processingImages = False
-    processingText = False
     processingPost = False
-    
-    rowCount = 0
-    
-    print "Processing",fichier
-    f = open(fichier,'r')
+    rowCount = 0   # current number of images in row
+
+    print "Processing", fichier
+    f = open(fichier, 'r')
     text = ''
-    
+
     fOut.write(headerStart)
-    
+
     l = f.readline().strip()
     while l <> '':
         # analyse of the XML tag
-        type = re.sub('>.*','>',l)
+        l = l.strip()
+        tag = re.sub('>.*', '>', l)
 
-        if type == '<image>' or type == '<pano>':
+        if tag == '<image>' or tag == '<pano>':
             flushText(text)
             text = ''
             # parsing image item
-            # <image>foo.jpg<height>480</height><width>640</width><comment>Nice picture</comment></image>            
-            # <pano>foo.jpg<height>480</height><width>1000</width><comment>Nice panorama</comment></image>            
+            # <image>foo.jpg<height>480</height><width>640</width><comment>Nice picture</comment></image>
+            # <pano>foo.jpg<height>480</height><width>1000</width><comment>Nice panorama</comment></image>
             # displaying images in tables
-            line = re.sub('<[^>]*>','|',l)
+            line = re.sub('<[^>]*>', '|', l)
             try:
                 imgDesc = line.split('|')
             except Exception, msg:
                 print '!!!!!!!!!!!!! Exception: bad image format:', msg, line
             if len(imgDesc) == 4:
-                (_,image,comment,_) = imgDesc
+                (_, image, comment, _) = imgDesc
             elif len(imgDesc) == 9:
-                (_,image,height,_,width,_,comment,_,_) = imgDesc
+                (_, image, height, _, width, _, comment, _, _) = imgDesc
             else:
                 print '!!!!!!!!!!!!! Bad image format:', line
-            if not processingImages or type == '<pano>':
+            if not processingImages or tag == '<pano>':
                 flushImgTable()
-                maxWidth= { 'H':0, 'V':0, 'P':0 }
-                pictures = []
-                nbCommentRows = 0
-                end = False
-                if type == '<pano>':
+                if tag == '<pano>':
                     rowCount = maxRow
                 else:
                     rowCount = 0
             processingImages = True
-            if type == '<pano>':
-                pictures.append(('P',image,comment,width,height))
+            if tag == '<pano>':
+                pictures.append(('P', image, comment, width, height))
             elif height == '640':
-                maxWidth['V'] = max(maxWidth['V'], len(comment))
-                pictures.append(('V',image,comment,width,height))
+                pictures.append(('V', image, comment, width, height))
             elif width == '640':
-                maxWidth['H'] = max(maxWidth['H'], len(comment))
-                pictures.append(('H',image,comment,width,height))
+                pictures.append(('H', image, comment, width, height))
             elif width == '800':
-                maxWidth['P'] = max(maxWidth['P'], len(comment))
-                pictures.append(('P',image,comment,width,height))
+                pictures.append(('P', image, comment, width, height))
             else:
-                pictures.append(('H',image,comment,width,height))                
-            rowCount += 1        
+                pictures.append(('H', image, comment, width, height))
+            rowCount += 1
         else:
             # end of the table of images
             if processingImages:
                 flushImgTable()
-            processingImages = False
+                processingImages = False
 
-        if type == '<title>':
+        if tag == '<title>':
             # title of the logbook
-            l = re.sub('</*title>','',l)
+            l = re.sub('</*title>', '', l)
             title = l.split('|')
-            fOut.write('<title>%s</title>\n' % cleanText(title[0],True))
+            fOut.write('<title>%s</title>\n' % cleanText(title[0], True))
             if len(title) == 2:
                 # the title has 2 parts : a text | an URL
-                titleText = '<a href="%s" target="_blank">%s</a>' % (title[1],title[0])
+                titleText = '<a href="%s" target="_blank">%s</a>' % (title[1], title[0])
             else:
-                fOut.write('<title>%s</title>\n' % cleanText(l,True))
+                fOut.write('<title>%s</title>\n' % cleanText(l, True))
                 titleText = title[0]
             fOut.write(headerMiddle % titleText)
-            
-        elif type == '<description>':
+
+        elif tag == '<description>':
             # description of the logbook
             fOut.write(headerEnd % cleanText(l))
-            
-        elif type == '<date>':
+
+        elif tag == '<date>':
             # new date in the logbook
             flushText(text)
             text = ''
 
-            if firstDate == False:
-                flushPost()
-                flushDate()
+            if firstDate is False:
+                fOut.write(postEnd)
+                fOut.write(dateEnd)
             firstDate = False
             processingPost = False
-            
+
             date = cleanText(l)
             if date <> '':
                 date = string.upper(date[0])+date[1:]
-            result = result +  '<date>' + date + '</date>\n'
             fOut.write(dateFormat % date)
-            (image, text, width, height) = ('','',0,0)
+            (image, text, width, height) = ('', '', 0, 0)
 
-        elif type == '<post>':
+        elif tag == '<post>':
             # new post title : left text | url | right text | url
             flushText(text)
             text = ''
             if processingImages:
                 flushImgTable()
-            processingImages = False
+                processingImages = False
             if processingPost:
-                flushPost()
+                fOut.write(postEnd)
                 fOut.write(postBanner)      # banner between 2 posts
             processingPost = True
             post = cleanText(l)
-            print 'Post:',re.sub('\|.*','',post)
+            print 'Post:', re.sub('\|.*', '', post)
 
-            # <post>left title|left url|right title|right url</post> 
+            # <post>left title|left url|right title|right url</post>
             elements = post.split('|')
             if len(elements) > 1:
                 post = '<a href="' + elements[1] + '" target="_blank">' + elements[0].strip() + '</a>'
@@ -341,91 +308,97 @@ def processFile(fichier):
             fOut.write(postBegin)
             fOut.write(post)
             fOut.write(postMiddle)
-            
-            searchingImage = True
-            processingImage = False
-            maxWidth= { 'H':0, 'V':0, 'P':0 }
+
+            processingImages = False
             pictures = []
-            nbCommentRows = 0
-            end = False
             rowCount = 0
-            
-        elif type == '<text>':
+
+        elif tag == '<text>':
             # list of paragraphs
             fOut.write('<div style="clear: both;"></div>')
             if text <> '':
                 text = text +'</p><p>'
-            text = text + cleanText(l,False)
-            
-        elif type == '</text>':
+            text = text + cleanText(l, False)
+
+        elif tag == '</text>':
             flushText(text)
             text = ''
 
-        elif type == '<split/>':
+        elif tag == '<split/>':
             # splitting image table
             print 'Splitting table'
             if processingImages:
                 flushImgTable()
                 processingImages = False
-                
-        elif type == '<page/>':
+
+        elif tag == '<page/>':
             # start a new page : to be used to optimize the printing version
             if processingImages:
                 flushImgTable()
-            processingImages = False
-            fOut.write('<div class="page-break"  style="page-break-before:always;"></div>\n')
-            
-        elif type in ['<image>','</image>','<pano>','</pano>']:
-            # already processed 
+                processingImages = False
+            if printing:
+                fOut.write('<div class="page-break"  style="page-break-before:always;"></div>\n')
+
+        elif tag in ['<image>', '</image>', '<pano>', '</pano>']:
+            # already processed
             pass
         else:
-            text = text + cleanText(l,False)
+            text = text + cleanText(l, False)
 
         if rowCount >= maxRow:
             flushImgTable()
             rowCount = 0
-    
-        l = f.readline().strip()
+
+        l = f.readline()
 
     if processingImages:
         # the logbook ends with images
         flushImgTable()
-    
-    flushPost()
+
+    fOut.write(postEnd)
     fOut.write(htmlEnd)
-    
-    
+
+
 def xml2print(xmlInput, htmlOutput, printing=False):
+    """
+    main function of module : generation of an HTML file from an XML file
+    """
+
     global fOut
     
-    fOut = open(htmlOutput,'w')
-    result = processFile(xmlInput)
+    fOut = open(htmlOutput, 'w')
+    processFile(xmlInput, printing)
     fOut.close()
-    print "Result file:",htmlOutput
-    
+    print "Result file:", htmlOutput
+
 
 if __name__ == "__main__":
     def usage():
+        """
+        print help on program
+        """
+
         print 'Usage: python xml2print.py [-p|--printing] logbook.xml logbook.html'
         sys.exit()
-    
+
     import getopt
     try:
-        opts, args = getopt.getopt(sys.argv[1:],"hp", ['help','printing'])
+        opts, args = getopt.getopt(sys.argv[1:], "hp", ['help', 'printing'])
     except getopt.GetoptError:
         usage()
 
     printing = False
     for opt, arg in opts:
-      if opt == '-h':
-          usage()
-      elif opt == "-p":
-          printing = True
+        if opt == '-h':
+            usage()
+        elif opt == "-p":
+            printing = True
 
     if len(args) == 2:
-        xml2print(args[0],args[1],printing)
+        try:
+            xml2print(args[0], args[1], printing)
+        except Exception, msg:
+            print "Problem:",msg
         print "That's all, folks!"
     else:
         usage()
-
-    
