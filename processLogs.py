@@ -100,11 +100,11 @@ class Logbook(object):
             url = re.findall('src="(.*?)" />', tagTable, re.S)    
             url = [re.sub('log/.*/', "log/display/", result) for result in url] # normalize form : http://img.geocaching.com/cache/log/display/*.jpg
             for index, tag in enumerate(url):
-                panora = self.__isPanoramaExist(title[index])
+                panora = self.__isPanorama(title[index])
                 listeImages.append((url[index], title[index], panora))
         elif 'LogBookPanel1_ImageMain' in dataLog: #if single images
             urlTitle = re.search('id="ctl00_ContentBody_LogBookPanel1_ImageMain(.*?)href="(.*?)" target(.*?)span class="logimg-caption">(.*?)</span><span>',dataLog, re.S)
-            panora = self.__isPanoramaExist(urlTitle.group(4))    
+            panora = self.__isPanorama(urlTitle.group(4))    
             listeImages.append((urlTitle.group(2), urlTitle.group(4), panora))
         else:
             print '!!!! Log without image', idLog,dateLog,titleCache,'>>>',typeLog
@@ -118,8 +118,8 @@ class Logbook(object):
             self.fXML.write("<%s>%s<height>480</height><width>640</width><comment>%s</comment></%s>\n"%(typeImage,log[0],log[1],typeImage))
 
     # images with "panorama" or "panoramique" in the caption are supposed to be wide pictures
-    def __isPanoramaExist(self, title):
-        return (True if re.search('panorama', title, re.IGNORECASE) else False)
+    def __isPanorama(self, title):
+        return (True if re.search('panoram', title, re.IGNORECASE) else False)
 
     def processLogs(self):
         """
