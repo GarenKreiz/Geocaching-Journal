@@ -201,6 +201,7 @@ class Logbook(object):
                 self.parseLog(dataLog, dateLog, idLog, idCache, titleCache, typeLog, natureLog)
 
         self.fXML.write('<date>Source : GarenKreiz/Geocaching-Journal @ GitHub (CC BY-NC 3.0 FR)</date>\n')
+        self.fXML.close()
         print 'Logs: ', self.nLogs, '/', logsCount, 'Days:', self.nDates, '/', len(dates)
         print 'Result file:', self.fNameOutput
 
