@@ -112,12 +112,8 @@ pictureFormatTemplate = """
 """
 
 pictureFormat = pictureFormatTemplate%('', '%s', '', '%s', '%s', '%s')
-#pictureFormatHorizontal = pictureFormatTemplate%('', '%s', 'height="%d"' % ( 519/maxRow), '%s', '%s', '%s')
-#pictureFormatVertical   = pictureFormatTemplate%('width: %dpx;'%( 519/maxRow), '%s', 'height="%d"'   % ( 692/maxRow), '%s', '%s', '%s')
-#pictureFormatPanorama   = pictureFormatTemplate%('', '%s', 'width="%dpx" '% 735 , '%s', '%s', '%s')
 pictureFormatHorizontal = pictureFormatTemplate%('', '%s', '', '%s', '%s', '%s')
 pictureFormatVertical   = pictureFormatTemplate%('', '%s', '', '%s', '%s', '%s')
-pictureFormatPanorama   = pictureFormatTemplate%('', '%s', 'style="max-width=%dpx;" '% 748 , '%s', '%s', '%s')
 pictureFormatPanorama   = pictureFormatTemplate%('', '%s', 'class="panorama"', '%s', '%s', '%s')
 
 pictures = []
@@ -204,9 +200,15 @@ def processFile(fichier, printing=False):
         l = l.strip()
         tag = re.sub('>.*', '>', l)
 
-        if tag == '<image>' or tag == '<pano>':
+        if tag in ['<image>','<pano>','<post>','<date>','</text>']:
             flushText(text)
             text = ''
+        if processingImages and tag not in ['<image>']:
+            flushImgTable()
+            processingImages = False
+            rowCount = 0
+            
+        if tag == '<image>' or tag == '<pano>':
             # parsing image item
             # <image>foo.jpg<height>480</height><width>640</width><comment>Nice picture</comment></image>
             # <pano>foo.jpg<height>480</height><width>1000</width><comment>Nice panorama</comment></image>
@@ -222,31 +224,20 @@ def processFile(fichier, printing=False):
                 (_, image, height, _, width, _, comment, _, _) = imgDesc
             else:
                 print '!!!!!!!!!!!!! Bad image format:', line
-            if not processingImages or tag == '<pano>':
+            if tag == '<pano>':
                 flushImgTable()
-                if tag == '<pano>':
-                    rowCount = maxRow
-                else:
-                    rowCount = 0
+                rowCount = maxRow
+
             processingImages = True
             if tag == '<pano>':
                 pictures.append(('P', image, comment, width, height))
-            elif height == '640':
+            elif height > width:
                 pictures.append(('V', image, comment, width, height))
-            elif width == '640':
-                pictures.append(('H', image, comment, width, height))
-            elif width == '800':
-                pictures.append(('P', image, comment, width, height))
             else:
                 pictures.append(('H', image, comment, width, height))
             rowCount += 1
-        else:
-            # end of the table of images
-            if processingImages:
-                flushImgTable()
-                processingImages = False
 
-        if tag == '<title>':
+        elif tag == '<title>':
             # title of the logbook
             l = re.sub('</*title>', '', l)
             title = l.split('|')
@@ -265,12 +256,8 @@ def processFile(fichier, printing=False):
 
         elif tag == '<date>':
             # new date in the logbook
-            flushText(text)
-            text = ''
-
             if firstDate is False:
-                fOut.write(postEnd)
-                fOut.write(dateEnd)
+                fOut.write(postEnd + dateEnd)
             firstDate = False
             processingPost = False
 
@@ -282,14 +269,8 @@ def processFile(fichier, printing=False):
 
         elif tag == '<post>':
             # new post title : left text | url | right text | url
-            flushText(text)
-            text = ''
-            if processingImages:
-                flushImgTable()
-                processingImages = False
             if processingPost:
-                fOut.write(postEnd)
-                fOut.write(postBanner)      # banner between 2 posts
+                fOut.write(postEnd + postBanner) # banner between 2 posts
             processingPost = True
             post = cleanText(l)
             print 'Post:', re.sub('\|.*', '', post)
@@ -304,14 +285,9 @@ def processFile(fichier, printing=False):
                     if len(elements) > 3:
                         log = '<a href="' + elements[3] + '" target="_blank">' + log + '</a>'
                     post = post + '<div class="alignright">' + log + '</div>'
-
-            fOut.write(postBegin)
-            fOut.write(post)
-            fOut.write(postMiddle)
-
-            processingImages = False
-            pictures = []
-            rowCount = 0
+            else:
+                post = elements[0].strip()
+            fOut.write(postBegin + post + postMiddle)
 
         elif tag == '<text>':
             # list of paragraphs
@@ -320,26 +296,16 @@ def processFile(fichier, printing=False):
                 text = text +'</p><p>'
             text = text + cleanText(l, False)
 
-        elif tag == '</text>':
-            flushText(text)
-            text = ''
-
         elif tag == '<split/>':
             # splitting image table
             print 'Splitting table'
-            if processingImages:
-                flushImgTable()
-                processingImages = False
 
         elif tag == '<page/>':
             # start a new page : to be used to optimize the printing version
-            if processingImages:
-                flushImgTable()
-                processingImages = False
             if printing:
                 fOut.write('<div class="page-break"  style="page-break-before:always;"></div>\n')
 
-        elif tag in ['<image>', '</image>', '<pano>', '</pano>']:
+        elif tag in ['<image>', '</image>', '<pano>', '</pano>', '</text>']:
             # already processed
             pass
         else:
@@ -355,8 +321,7 @@ def processFile(fichier, printing=False):
         # the logbook ends with images
         flushImgTable()
 
-    fOut.write(postEnd)
-    fOut.write(htmlEnd)
+    fOut.write(postEnd + htmlEnd)
 
 
 def xml2print(xmlInput, htmlOutput, printing=False):
