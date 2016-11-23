@@ -106,15 +106,11 @@ htmlEnd = """
 """
 
 pictureFormatTemplate = """
-<table class="picture" style="%s"><tbody>
-<tr><td>%s<img %s src="%s">%s</td></tr>
-<tr><td class="caption">%s</td></tr></tbody></table>
+<table class="picture"><tbody>%s
+<tr><td><img class="%s" src="%s"/></td></tr>
+<tr><td class="caption">%s</td></tr>
+%s</tbody></table>
 """
-
-pictureFormat = pictureFormatTemplate%('', '%s', '', '%s', '%s', '%s')
-pictureFormatHorizontal = pictureFormatTemplate%('', '%s', '', '%s', '%s', '%s')
-pictureFormatVertical   = pictureFormatTemplate%('', '%s', '', '%s', '%s', '%s')
-pictureFormatPanorama   = pictureFormatTemplate%('', '%s', 'class="panorama"', '%s', '%s', '%s')
 
 pictures = []
 fOut = None
@@ -143,7 +139,7 @@ def flushImgTable():
         return
 
     fOut.write('<table class="table-pictures"><tr>')
-    for (d, image, comment, width, height) in pictures:
+    for (format, image, comment, width, height) in pictures:
         fOut.write('<td>')
         comment = re.sub('&pad;', '', comment)
 
@@ -152,12 +148,8 @@ def flushImgTable():
         popupLink = '<a href="javascript:popstatic(\'%s\',\'.\');">'%imageFullSize
         if comment == '__EMPTY__':
             fOut.write('<td></td>')
-        elif d == 'V':
-            fOut.write(pictureFormatVertical   % (popupLink, image, '</a>', comment))
-        elif d == 'H':
-            fOut.write(pictureFormatHorizontal % (popupLink, image, '</a>', comment))
-        elif d == 'P':
-            fOut.write(pictureFormatPanorama   % (popupLink, image, '</a>', comment))
+        else:
+            fOut.write(pictureFormatTemplate % (popupLink, format, image, comment, '</a>'))
         comment = re.sub('<br>', '', comment)
         fOut.write('</td>')
     fOut.write('</tr></table>')
@@ -230,11 +222,11 @@ def processFile(fichier, printing=False):
 
             processingImages = True
             if tag == '<pano>':
-                pictures.append(('P', image, comment, width, height))
+                pictures.append(('panorama', image, comment, width, height))
             elif height > width:
-                pictures.append(('V', image, comment, width, height))
+                pictures.append(('portrait', image, comment, width, height))
             else:
-                pictures.append(('H', image, comment, width, height))
+                pictures.append(('landscape', image, comment, width, height))
             rowCount += 1
 
         elif tag == '<title>':

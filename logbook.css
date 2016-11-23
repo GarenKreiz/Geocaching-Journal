@@ -124,6 +124,12 @@ h2.date-header {
     width: 800px;
     padding: 3px 3px 0px 3px;
 }
+.picture .portrait {
+    width: 256px;
+}
+.picture .landscape {
+    width: 256px;
+}
 .picture .caption {
     height: 2.3em;
     padding: 0;
