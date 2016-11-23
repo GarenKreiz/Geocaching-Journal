@@ -131,7 +131,7 @@ class Logbook(object):
             self.fXML.write('<title>' + bookTitle + '</title>\n')
             self.fXML.write('<description>' + bookDescription + '</description>\n')
 
-        logsCount = 0
+        allLogs = 0
         days = {}
 
         idLog = None
@@ -149,12 +149,13 @@ class Logbook(object):
             idLog = re.search('LUID=(.*?)"', listTd[5]).group(1)
             titleCache = re.search('</a> <a(.*)?\">(.*)</a>', listTd[3]).group(2).replace('</span>', '')
             natureLog = ('C' if listTd[3].find('cache_details') > 1 else 'T') # C for Cache and T for trackable
+            allLogs += 1
+ 
             # keeping the logs that are not excluded by -x option
             #keep = (True if typeLog.lower() in [item.lower() for item in self.excluded] else False)
             #test short string research exclude - ex : -x Write for Write note or -x Found for Found it - etc.
             keepLog = (False if len([excluded for excluded in self.excluded if excluded.lower() in typeLog.lower()]) else True)
             if keepLog and idLog <> '':
-                logsCount += 1
                 try:
                     days[dateLog].append((idLog, idCache, titleCache, typeLog, natureLog))
                 except:
@@ -175,6 +176,7 @@ class Logbook(object):
             dayLogs = days[dateLog]
             dayLogs.reverse()
             for (idLog, idCache, titleCache, typeLog, natureLog) in dayLogs:
+                self.nLogs += 1
                 # logId, cacheId or tbID, title, type, nature
                 # building a local cache of the HTML page of each log
                 # directory: Logs and 16 sub-directories based on the first letter
@@ -202,7 +204,7 @@ class Logbook(object):
 
         self.fXML.write('<date>Source : GarenKreiz/Geocaching-Journal @ GitHub (CC BY-NC 3.0 FR)</date>\n')
         self.fXML.close()
-        print 'Logs: ', self.nLogs, '/', logsCount, 'Days:', self.nDates, '/', len(dates)
+        print 'Logs: ', self.nLogs, '/', allLogs, 'Days:', self.nDates, '/', len(dates)
         print 'Result file:', self.fNameOutput
 
     def __formatDate(self, date):
