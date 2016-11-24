@@ -104,11 +104,29 @@ def cleanText(textInput, allTags=True):
 
 def flushGallery(fOut, pictures, groupPanoramas=False):
     """
-    end of a row of images
+    print the image gallery of a post, possibly grouping all panoramas at the end
+    """
+
+    if groupPanoramas:
+        panoramas = []
+        plainPictures = []
+        for (format, image, comment, width, height) in pictures:
+            if format == 'panorama':
+                panoramas.append((format, image, comment, width, height))
+            else:
+                plainPictures.append((format, image, comment, width, height))
+        flushSubGallery(fOut,plainPictures)
+        flushSubGallery(fOut,panoramas)
+    else:
+        flushSubGallery(fOut,pictures)
+
+
+def flushSubGallery(fOut,pictures):
+    """
+    print a sub gallery of images in sequence
     """
 
     rowCount = 0       # current number of images in row
-    
     panoramas = []
     
     fOut.write('<table class="table-pictures"><tr>')
@@ -173,7 +191,7 @@ def xml2print(xmlInput, htmlOutput, printing=False, groupPanoramas=False):
         if tag in ['<image>','<pano>','<post>','<date>','</text>']:
             flushText(fOut,text)
             text = ''
-        if pictures <> [] and tag not in ['<image>']:
+        if pictures <> [] and tag not in ['<image>', '<pano>']:
             flushGallery(fOut,pictures,groupPanoramas)
             pictures = []
             
