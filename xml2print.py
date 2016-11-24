@@ -70,40 +70,13 @@ headerEnd = """
 <div class="main">
 """
 
-articleBegin = """
-"""
-
-dateFormat = """
-<div class="date">
-<h2 class="date-header">%s</h2>
-<div class="post-entry">
-"""
-
-postBegin = """
-<h3 class="post-title">
-"""
-
-postMiddle = """
-</h3>
-"""
-
-postBanner = """
-<div class="post-banner"></div>
-<div class="post-entry">
-"""
-
-postEnd = """
-</div>  <!--// class:post-entry //-->
-"""
-
-dateEnd = """
-</div>  <!--// class:date //-->
-"""
-
-htmlEnd = """
-</body>
-</html>
-"""
+dateFormat = '<div class="date"><h2 class="date-header">%s</h2><div class="post-entry">'
+postBegin = '<h3 class="post-title">'
+postMiddle = '</h3>'
+postBanner = '<div class="post-banner"></div><div class="post-entry">'
+postEnd = '</div>  <!--// class:post-entry //-->'
+dateEnd = '</div>  <!--// class:date //-->'
+htmlEnd = '</body></html>'
 
 pictureFormatTemplate = """
 <table class="picture"><tbody>%s
@@ -112,8 +85,8 @@ pictureFormatTemplate = """
 %s</tbody></table>
 """
 
-pictures = []
 fOut = None
+
 
 def cleanText(textInput, allTags=True):
     """
@@ -128,34 +101,34 @@ def cleanText(textInput, allTags=True):
         resu = re.sub('<[^>]*>', '', resu)
     return resu
 
-def flushImgTable():
+
+def flushImgTable(pictures):
     """
     end of a row of images
     """
 
-    global pictures
-
-    if len(pictures) == 0:
-        return
-
+    rowCount = 0       # current number of images in row
+    
+    panoramas = []
+    
     fOut.write('<table class="table-pictures"><tr>')
     for (format, image, comment, width, height) in pictures:
-        fOut.write('<td>')
         comment = re.sub('&pad;', '', comment)
-
+        if format == 'panorama' and rowCount > 0 or rowCount == maxRow:
+            # start a new row of pictures
+            fOut.write('</tr></table>')
+            fOut.write('<table class="table-pictures"><tr>')
+            rowCount = 0
+        rowCount = (maxRow if format == 'panorama' else rowCount + 1)
+        fOut.write('<td>')
+            
         # specific to geocaching logs : open a full sized view of picture
         imageFullSize = re.sub('https://img.geocaching.com/cache/log/display/', 'https://img.geocaching.com/cache/log/', image)
         popupLink = '<a href="javascript:popstatic(\'%s\',\'.\');">'%imageFullSize
-        if comment == '__EMPTY__':
-            fOut.write('<td></td>')
-        else:
-            fOut.write(pictureFormatTemplate % (popupLink, format, image, comment, '</a>'))
+        fOut.write(pictureFormatTemplate % (popupLink, format, image, comment, '</a>'))
         comment = re.sub('<br>', '', comment)
         fOut.write('</td>')
     fOut.write('</tr></table>')
-
-    pictures = []
-
 
 def flushText(text):
     """
@@ -173,12 +146,9 @@ def processFile(fichier, printing=False):
     analyse of a description file in XML and generate an HTML file
     """
 
-    global pictures
-
     firstDate = True
-    processingImages = False
+    pictures = []
     processingPost = False
-    rowCount = 0   # current number of images in row
 
     print "Processing", fichier
     f = open(fichier, 'r')
@@ -195,10 +165,9 @@ def processFile(fichier, printing=False):
         if tag in ['<image>','<pano>','<post>','<date>','</text>']:
             flushText(text)
             text = ''
-        if processingImages and tag not in ['<image>']:
-            flushImgTable()
-            processingImages = False
-            rowCount = 0
+        if pictures <> [] and tag not in ['<image>']:
+            flushImgTable(pictures)
+            pictures = []
             
         if tag == '<image>' or tag == '<pano>':
             # parsing image item
@@ -217,17 +186,11 @@ def processFile(fichier, printing=False):
             else:
                 print '!!!!!!!!!!!!! Bad image format:', line
             if tag == '<pano>':
-                flushImgTable()
-                rowCount = maxRow
-
-            processingImages = True
-            if tag == '<pano>':
                 pictures.append(('panorama', image, comment, width, height))
             elif height > width:
                 pictures.append(('portrait', image, comment, width, height))
             else:
                 pictures.append(('landscape', image, comment, width, height))
-            rowCount += 1
 
         elif tag == '<title>':
             # title of the logbook
@@ -303,13 +266,9 @@ def processFile(fichier, printing=False):
         else:
             text = text + cleanText(l, False)
 
-        if rowCount >= maxRow:
-            flushImgTable()
-            rowCount = 0
-
         l = f.readline()
 
-    if processingImages:
+    if pictures <> []:
         # the logbook ends with images
         flushImgTable()
 
