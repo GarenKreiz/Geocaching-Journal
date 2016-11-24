@@ -160,12 +160,6 @@ def flushText(fOut,text):
         fOut.write(text)
 
 
-def processFile(fichier, printing=False):
-    """
-    analyse of a description file in XML and generate an HTML file
-    """
-
-
 def xml2print(xmlInput, htmlOutput, printing=False, groupPanoramas=False):
     """
     main function of module : generation of an HTML file from an XML file
@@ -278,7 +272,7 @@ def xml2print(xmlInput, htmlOutput, printing=False, groupPanoramas=False):
             text = text + cleanText(l, False)
 
         elif tag == '<split/>':
-            # splitting image table
+            # splitting image table by terminating gallery
             print 'Splitting table'
 
         elif tag == '<page/>':
@@ -289,6 +283,7 @@ def xml2print(xmlInput, htmlOutput, printing=False, groupPanoramas=False):
         elif tag in ['<image>', '</image>', '<pano>', '</pano>', '</text>']:
             # already processed
             pass
+        
         else:
             text = text + cleanText(l, False)
 
