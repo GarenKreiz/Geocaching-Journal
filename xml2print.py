@@ -146,16 +146,26 @@ def processFile(fichier, printing=False):
     analyse of a description file in XML and generate an HTML file
     """
 
+
+
+def xml2print(xmlInput, htmlOutput, printing=False, groupPanoramas=False):
+    """
+    main function of module : generation of an HTML file from an XML file
+    """
+
+    global fOut
+    
+    fOut = open(htmlOutput, 'w')
     firstDate = True
     pictures = []
     processingPost = False
-
-    print "Processing", fichier
-    f = open(fichier, 'r')
     text = ''
 
     fOut.write(headerStart)
 
+    print "Processing", xmlInput
+    f = open(xmlInput, 'r')
+    
     l = f.readline().strip()
     while l <> '':
         # analyse of the XML tag
@@ -220,7 +230,7 @@ def processFile(fichier, printing=False):
             if date <> '':
                 date = string.upper(date[0])+date[1:]
             fOut.write(dateFormat % date)
-            (image, text, width, height) = ('', '', 0, 0)
+            text = ''
 
         elif tag == '<post>':
             # new post title : left text | url | right text | url
@@ -273,17 +283,6 @@ def processFile(fichier, printing=False):
         flushImgTable()
 
     fOut.write(postEnd + htmlEnd)
-
-
-def xml2print(xmlInput, htmlOutput, printing=False):
-    """
-    main function of module : generation of an HTML file from an XML file
-    """
-
-    global fOut
-    
-    fOut = open(htmlOutput, 'w')
-    processFile(xmlInput, printing)
     fOut.close()
     print "Result file:", htmlOutput
 
@@ -294,25 +293,28 @@ if __name__ == "__main__":
         print help on program
         """
 
-        print 'Usage: python xml2print.py [-p|--printing] logbook.xml logbook.html'
+        print 'Usage: python xml2print.py [-p|--printing] [-g|--groupPanoramas] logbook.xml logbook.html'
         sys.exit()
 
     import getopt
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "hp", ['help', 'printing'])
+        opts, args = getopt.getopt(sys.argv[1:], "hpg", ['help', 'printing', 'groupPanoramas'])
     except getopt.GetoptError:
         usage()
 
     printing = False
+    groupPanoramas = False
     for opt, arg in opts:
         if opt == '-h':
             usage()
         elif opt == "-p":
             printing = True
+        elif opt == "-g":
+            groupPanoramas = True
 
     if len(args) == 2:
         try:
-            xml2print(args[0], args[1], printing)
+            xml2print(args[0], args[1], printing, groupPanoramas)
         except Exception, msg:
             print "Problem:",msg
         print "That's all, folks!"
