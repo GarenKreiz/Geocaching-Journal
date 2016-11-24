@@ -102,7 +102,7 @@ def cleanText(textInput, allTags=True):
     return resu
 
 
-def flushImgTable(pictures):
+def flushGallery(fOut, pictures, groupPanoramas=False):
     """
     end of a row of images
     """
@@ -130,7 +130,8 @@ def flushImgTable(pictures):
         fOut.write('</td>')
     fOut.write('</tr></table>')
 
-def flushText(text):
+
+def flushText(fOut,text):
     """
     flushing text as HTML paragraph
     """
@@ -147,14 +148,11 @@ def processFile(fichier, printing=False):
     """
 
 
-
 def xml2print(xmlInput, htmlOutput, printing=False, groupPanoramas=False):
     """
     main function of module : generation of an HTML file from an XML file
     """
 
-    global fOut
-    
     fOut = open(htmlOutput, 'w')
     firstDate = True
     pictures = []
@@ -173,10 +171,10 @@ def xml2print(xmlInput, htmlOutput, printing=False, groupPanoramas=False):
         tag = re.sub('>.*', '>', l)
 
         if tag in ['<image>','<pano>','<post>','<date>','</text>']:
-            flushText(text)
+            flushText(fOut,text)
             text = ''
         if pictures <> [] and tag not in ['<image>']:
-            flushImgTable(pictures)
+            flushGallery(fOut,pictures,groupPanoramas)
             pictures = []
             
         if tag == '<image>' or tag == '<pano>':
@@ -280,7 +278,7 @@ def xml2print(xmlInput, htmlOutput, printing=False, groupPanoramas=False):
 
     if pictures <> []:
         # the logbook ends with images
-        flushImgTable()
+        flushGallery(fOut, pictures, groupPanoramas)
 
     fOut.write(postEnd + htmlEnd)
     fOut.close()
