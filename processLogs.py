@@ -107,11 +107,13 @@ class Logbook(object):
 
         # listeImages.sort(key=lambda e: e[2]) # panoramas are displayed after the other images - sort by field panora
 
-        for log in listeImages:
-            typeImage = ('pano' if log[2] else 'image')
+        for (img, caption, panora) in listeImages:
+            typeImage = ('pano' if panora else 'image')
             # at this point, no information is available on the size of image
             # assume a standard format 640x480 (nostalgia of the 80's?)
-            self.fXML.write("<%s>%s<height>480</height><width>640</width><comment>%s</comment></%s>\n"%(typeImage,log[0],log[1],typeImage))
+            if typeImage == 'pano':
+                img = re.sub('/display/', '/', img)
+            self.fXML.write("<%s>%s<height>480</height><width>640</width><comment>%s</comment></%s>\n"%(typeImage, img, caption, typeImage))
 
     # images with "panorama" or "panoramique" in the caption are supposed to be wide pictures
     def __isPanorama(self, title):
@@ -323,7 +325,7 @@ if __name__ == '__main__':
         # second phase : from XML to generated HTML
         if re.search(".htm[l]*", args[1], re.IGNORECASE):
             import xml2print
-            xml2print.xml2print(xmlFile, args[1])
+            xml2print.xml2print(xmlFile, args[1], printing=False, groupPanoramas=True)
         print "That's all folks!"
     else:
         usage()

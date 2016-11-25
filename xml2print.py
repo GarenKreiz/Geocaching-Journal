@@ -46,7 +46,6 @@ headerStart = """<!DOCTYPE html>
 var newwindow;
 function popstatic(url,windowName)
 {
-	// newwindow=window.open(url,windowName,'toolbar=no,status=no,menubas=no');
 	newwindow=window.open(url,windowName,'toolbar=no,scrollbars=yes,status=no,menubar=no,location=no');
 	newwindow.resizeTo(screen.width-20,screen.height-20)
 	newwindow.moveTo(10,10);
@@ -79,13 +78,11 @@ dateEnd = '</div>  <!--// class:date //-->'
 htmlEnd = '</body></html>'
 
 pictureFormatTemplate = """
-<table class="picture"><tbody>%s
+<table class="picture"><tbody>
 <tr><td><img class="%s" src="%s"/></td></tr>
 <tr><td class="caption">%s</td></tr>
-%s</tbody></table>
+</tbody></table>
 """
-
-fOut = None
 
 
 def cleanText(textInput, allTags=True):
@@ -143,7 +140,7 @@ def flushSubGallery(fOut,pictures):
         # specific to geocaching logs : open a full sized view of picture
         imageFullSize = re.sub('https://img.geocaching.com/cache/log/display/', 'https://img.geocaching.com/cache/log/', image)
         popupLink = '<a href="javascript:popstatic(\'%s\',\'.\');">'%imageFullSize
-        fOut.write(pictureFormatTemplate % (popupLink, format, image, comment, '</a>'))
+        fOut.write(popupLink + pictureFormatTemplate % (format, image, comment) + '</a>')
         comment = re.sub('<br>', '', comment)
         fOut.write('</td>')
     fOut.write('</tr></table>')
@@ -267,8 +264,7 @@ def xml2print(xmlInput, htmlOutput, printing=False, groupPanoramas=False):
         elif tag == '<text>':
             # list of paragraphs
             fOut.write('<div style="clear: both;"></div>')
-            if text <> '':
-                text = text +'</p><p>'
+            text = text +'</p><p>' if text <> '' else ''
             text = text + cleanText(l, False)
 
         elif tag == '<split/>':
