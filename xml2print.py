@@ -70,58 +70,23 @@ headerEnd = """
 <div class="main">
 """
 
-articleBegin = """
-"""
-
-dateFormat = """
-<div class="date">
-<h2 class="date-header">%s</h2>
-<div class="post-entry">
-"""
-
-postBegin = """
-<h3 class="post-title">
-"""
-
-postMiddle = """
-</h3>
-"""
-
-postBanner = """
-<div class="post-banner"></div>
-<div class="post-entry">
-"""
-
-postEnd = """
-</div>  <!--// class:post-entry //-->
-"""
-
-dateEnd = """
-</div>  <!--// class:date //-->
-"""
-
-htmlEnd = """
-</body>
-</html>
-"""
+dateFormat = '<div class="date"><h2 class="date-header">%s</h2><div class="post-entry">'
+postBegin = '<h3 class="post-title">'
+postMiddle = '</h3>'
+postBanner = '<div class="post-banner"></div><div class="post-entry">'
+postEnd = '</div>  <!--// class:post-entry //-->'
+dateEnd = '</div>  <!--// class:date //-->'
+htmlEnd = '</body></html>'
 
 pictureFormatTemplate = """
-<table class="picture" style="%s"><tbody>
-<tr><td>%s<img %s src="%s">%s</td></tr>
-<tr><td class="caption">%s</td></tr></tbody></table>
+<table class="picture"><tbody>%s
+<tr><td><img class="%s" src="%s"/></td></tr>
+<tr><td class="caption">%s</td></tr>
+%s</tbody></table>
 """
 
-pictureFormat = pictureFormatTemplate%('', '%s', '', '%s', '%s', '%s')
-#pictureFormatHorizontal = pictureFormatTemplate%('', '%s', 'height="%d"' % ( 519/maxRow), '%s', '%s', '%s')
-#pictureFormatVertical   = pictureFormatTemplate%('width: %dpx;'%( 519/maxRow), '%s', 'height="%d"'   % ( 692/maxRow), '%s', '%s', '%s')
-#pictureFormatPanorama   = pictureFormatTemplate%('', '%s', 'width="%dpx" '% 735 , '%s', '%s', '%s')
-pictureFormatHorizontal = pictureFormatTemplate%('', '%s', '', '%s', '%s', '%s')
-pictureFormatVertical   = pictureFormatTemplate%('', '%s', '', '%s', '%s', '%s')
-pictureFormatPanorama   = pictureFormatTemplate%('', '%s', 'style="max-width=%dpx;" '% 748 , '%s', '%s', '%s')
-pictureFormatPanorama   = pictureFormatTemplate%('', '%s', 'class="panorama"', '%s', '%s', '%s')
-
-pictures = []
 fOut = None
+
 
 def cleanText(textInput, allTags=True):
     """
@@ -136,40 +101,55 @@ def cleanText(textInput, allTags=True):
         resu = re.sub('<[^>]*>', '', resu)
     return resu
 
-def flushImgTable():
+
+def flushGallery(fOut, pictures, groupPanoramas=False):
     """
-    end of a row of images
+    print the image gallery of a post, possibly grouping all panoramas at the end
     """
 
-    global pictures
+    if groupPanoramas:
+        panoramas = []
+        plainPictures = []
+        for (format, image, comment, width, height) in pictures:
+            if format == 'panorama':
+                panoramas.append((format, image, comment, width, height))
+            else:
+                plainPictures.append((format, image, comment, width, height))
+        flushSubGallery(fOut,plainPictures)
+        flushSubGallery(fOut,panoramas)
+    else:
+        flushSubGallery(fOut,pictures)
 
-    if len(pictures) == 0:
-        return
 
+def flushSubGallery(fOut,pictures):
+    """
+    print a sub gallery of images in sequence
+    """
+
+    rowCount = 0       # current number of images in row
+    panoramas = []
+    
     fOut.write('<table class="table-pictures"><tr>')
-    for (d, image, comment, width, height) in pictures:
-        fOut.write('<td>')
+    for (format, image, comment, width, height) in pictures:
         comment = re.sub('&pad;', '', comment)
-
+        if format == 'panorama' and rowCount > 0 or rowCount == maxRow:
+            # start a new row of pictures
+            fOut.write('</tr></table>')
+            fOut.write('<table class="table-pictures"><tr>')
+            rowCount = 0
+        rowCount = (maxRow if format == 'panorama' else rowCount + 1)
+        fOut.write('<td>')
+            
         # specific to geocaching logs : open a full sized view of picture
         imageFullSize = re.sub('https://img.geocaching.com/cache/log/display/', 'https://img.geocaching.com/cache/log/', image)
         popupLink = '<a href="javascript:popstatic(\'%s\',\'.\');">'%imageFullSize
-        if comment == '__EMPTY__':
-            fOut.write('<td></td>')
-        elif d == 'V':
-            fOut.write(pictureFormatVertical   % (popupLink, image, '</a>', comment))
-        elif d == 'H':
-            fOut.write(pictureFormatHorizontal % (popupLink, image, '</a>', comment))
-        elif d == 'P':
-            fOut.write(pictureFormatPanorama   % (popupLink, image, '</a>', comment))
+        fOut.write(pictureFormatTemplate % (popupLink, format, image, comment, '</a>'))
         comment = re.sub('<br>', '', comment)
         fOut.write('</td>')
     fOut.write('</tr></table>')
 
-    pictures = []
 
-
-def flushText(text):
+def flushText(fOut,text):
     """
     flushing text as HTML paragraph
     """
@@ -180,33 +160,36 @@ def flushText(text):
         fOut.write(text)
 
 
-def processFile(fichier, printing=False):
+def xml2print(xmlInput, htmlOutput, printing=False, groupPanoramas=False):
     """
-    analyse of a description file in XML and generate an HTML file
+    main function of module : generation of an HTML file from an XML file
     """
 
-    global pictures
-
+    fOut = open(htmlOutput, 'w')
     firstDate = True
-    processingImages = False
+    pictures = []
     processingPost = False
-    rowCount = 0   # current number of images in row
-
-    print "Processing", fichier
-    f = open(fichier, 'r')
     text = ''
 
     fOut.write(headerStart)
 
+    print "Processing", xmlInput
+    f = open(xmlInput, 'r')
+    
     l = f.readline().strip()
     while l <> '':
         # analyse of the XML tag
         l = l.strip()
         tag = re.sub('>.*', '>', l)
 
-        if tag == '<image>' or tag == '<pano>':
-            flushText(text)
+        if tag in ['<image>','<pano>','<post>','<date>','</text>']:
+            flushText(fOut,text)
             text = ''
+        if pictures <> [] and tag not in ['<image>', '<pano>']:
+            flushGallery(fOut,pictures,groupPanoramas)
+            pictures = []
+            
+        if tag == '<image>' or tag == '<pano>':
             # parsing image item
             # <image>foo.jpg<height>480</height><width>640</width><comment>Nice picture</comment></image>
             # <pano>foo.jpg<height>480</height><width>1000</width><comment>Nice panorama</comment></image>
@@ -222,31 +205,14 @@ def processFile(fichier, printing=False):
                 (_, image, height, _, width, _, comment, _, _) = imgDesc
             else:
                 print '!!!!!!!!!!!!! Bad image format:', line
-            if not processingImages or tag == '<pano>':
-                flushImgTable()
-                if tag == '<pano>':
-                    rowCount = maxRow
-                else:
-                    rowCount = 0
-            processingImages = True
             if tag == '<pano>':
-                pictures.append(('P', image, comment, width, height))
-            elif height == '640':
-                pictures.append(('V', image, comment, width, height))
-            elif width == '640':
-                pictures.append(('H', image, comment, width, height))
-            elif width == '800':
-                pictures.append(('P', image, comment, width, height))
+                pictures.append(('panorama', image, comment, width, height))
+            elif height > width:
+                pictures.append(('portrait', image, comment, width, height))
             else:
-                pictures.append(('H', image, comment, width, height))
-            rowCount += 1
-        else:
-            # end of the table of images
-            if processingImages:
-                flushImgTable()
-                processingImages = False
+                pictures.append(('landscape', image, comment, width, height))
 
-        if tag == '<title>':
+        elif tag == '<title>':
             # title of the logbook
             l = re.sub('</*title>', '', l)
             title = l.split('|')
@@ -265,12 +231,8 @@ def processFile(fichier, printing=False):
 
         elif tag == '<date>':
             # new date in the logbook
-            flushText(text)
-            text = ''
-
             if firstDate is False:
-                fOut.write(postEnd)
-                fOut.write(dateEnd)
+                fOut.write(postEnd + dateEnd)
             firstDate = False
             processingPost = False
 
@@ -278,18 +240,12 @@ def processFile(fichier, printing=False):
             if date <> '':
                 date = string.upper(date[0])+date[1:]
             fOut.write(dateFormat % date)
-            (image, text, width, height) = ('', '', 0, 0)
+            text = ''
 
         elif tag == '<post>':
             # new post title : left text | url | right text | url
-            flushText(text)
-            text = ''
-            if processingImages:
-                flushImgTable()
-                processingImages = False
             if processingPost:
-                fOut.write(postEnd)
-                fOut.write(postBanner)      # banner between 2 posts
+                fOut.write(postEnd + postBanner) # banner between 2 posts
             processingPost = True
             post = cleanText(l)
             print 'Post:', re.sub('\|.*', '', post)
@@ -304,14 +260,9 @@ def processFile(fichier, printing=False):
                     if len(elements) > 3:
                         log = '<a href="' + elements[3] + '" target="_blank">' + log + '</a>'
                     post = post + '<div class="alignright">' + log + '</div>'
-
-            fOut.write(postBegin)
-            fOut.write(post)
-            fOut.write(postMiddle)
-
-            processingImages = False
-            pictures = []
-            rowCount = 0
+            else:
+                post = elements[0].strip()
+            fOut.write(postBegin + post + postMiddle)
 
         elif tag == '<text>':
             # list of paragraphs
@@ -320,54 +271,29 @@ def processFile(fichier, printing=False):
                 text = text +'</p><p>'
             text = text + cleanText(l, False)
 
-        elif tag == '</text>':
-            flushText(text)
-            text = ''
-
         elif tag == '<split/>':
-            # splitting image table
+            # splitting image table by terminating gallery
             print 'Splitting table'
-            if processingImages:
-                flushImgTable()
-                processingImages = False
 
         elif tag == '<page/>':
             # start a new page : to be used to optimize the printing version
-            if processingImages:
-                flushImgTable()
-                processingImages = False
             if printing:
                 fOut.write('<div class="page-break"  style="page-break-before:always;"></div>\n')
 
-        elif tag in ['<image>', '</image>', '<pano>', '</pano>']:
+        elif tag in ['<image>', '</image>', '<pano>', '</pano>', '</text>']:
             # already processed
             pass
+        
         else:
             text = text + cleanText(l, False)
 
-        if rowCount >= maxRow:
-            flushImgTable()
-            rowCount = 0
-
         l = f.readline()
 
-    if processingImages:
+    if pictures <> []:
         # the logbook ends with images
-        flushImgTable()
+        flushGallery(fOut, pictures, groupPanoramas)
 
-    fOut.write(postEnd)
-    fOut.write(htmlEnd)
-
-
-def xml2print(xmlInput, htmlOutput, printing=False):
-    """
-    main function of module : generation of an HTML file from an XML file
-    """
-
-    global fOut
-    
-    fOut = open(htmlOutput, 'w')
-    processFile(xmlInput, printing)
+    fOut.write(postEnd + htmlEnd)
     fOut.close()
     print "Result file:", htmlOutput
 
@@ -378,25 +304,28 @@ if __name__ == "__main__":
         print help on program
         """
 
-        print 'Usage: python xml2print.py [-p|--printing] logbook.xml logbook.html'
+        print 'Usage: python xml2print.py [-p|--printing] [-g|--groupPanoramas] logbook.xml logbook.html'
         sys.exit()
 
     import getopt
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "hp", ['help', 'printing'])
+        opts, args = getopt.getopt(sys.argv[1:], "hpg", ['help', 'printing', 'groupPanoramas'])
     except getopt.GetoptError:
         usage()
 
     printing = False
+    groupPanoramas = False
     for opt, arg in opts:
         if opt == '-h':
             usage()
         elif opt == "-p":
             printing = True
+        elif opt == "-g":
+            groupPanoramas = True
 
     if len(args) == 2:
         try:
-            xml2print(args[0], args[1], printing)
+            xml2print(args[0], args[1], printing, groupPanoramas)
         except Exception, msg:
             print "Problem:",msg
         print "That's all, folks!"
