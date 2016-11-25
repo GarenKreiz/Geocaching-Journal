@@ -53,7 +53,7 @@ class Logbook(object):
                  verbose=True, startDate=None, endDate=None, refresh=False, excluded=[]):
         self.fNameInput = fNameInput
         self.fNameOutput = fNameOutput
-        self.fXML = codecs.open(fNameOutput, "w", 'utf-8')        
+        self.fXML = codecs.open(fNameOutput, "w", 'utf-8')
         self.verbose = verbose
         self.startDate = startDate
         self.endDate = endDate
@@ -81,37 +81,39 @@ class Logbook(object):
         if '_LogText">' in dataLog:
             text = re.search('_LogText">(.*?)</span>', dataLog, re.S).group(1)
             text = re.sub('src="/images/', 'src="http://www.geocaching.com/images/', text)
-            self.fXML.write('<text>%s</text>\n'%text)            
+            self.fXML.write('<text>%s</text>\n'%text)
         else:
             self.fXML.write('<text> </text>\n')
             print "!!!! Log unavailable", idLog
             return
 
         listeImages = []
-        
+
         if 'LogBookPanel1_GalleryList' in dataLog: #if Additional images
             tagTable = re.search('<table id="ctl00_ContentBody_LogBookPanel1_GalleryList(.*?)</table>',dataLog, re.S).group(0)
             title = re.findall('<img alt=\'(.*?)\' src', tagTable, re.S)
-            title = [re.sub(' log image', "", result) for result in title]    
-            url = re.findall('src="(.*?)" />', tagTable, re.S)    
+            title = [re.sub(' log image', "", result) for result in title]
+            url = re.findall('src="(.*?)" />', tagTable, re.S)
             url = [re.sub('log/.*/', "log/display/", result) for result in url] # normalize form : http://img.geocaching.com/cache/log/display/*.jpg
             for index, tag in enumerate(url):
                 panora = self.__isPanorama(title[index])
                 listeImages.append((url[index], title[index], panora))
         elif 'LogBookPanel1_ImageMain' in dataLog: #if single images
             urlTitle = re.search('id="ctl00_ContentBody_LogBookPanel1_ImageMain(.*?)href="(.*?)" target(.*?)span class="logimg-caption">(.*?)</span><span>',dataLog, re.S)
-            panora = self.__isPanorama(urlTitle.group(4))    
+            panora = self.__isPanorama(urlTitle.group(4))
             listeImages.append((urlTitle.group(2), urlTitle.group(4), panora))
         else:
-            print '!!!! Log without image', idLog,dateLog,titleCache,'>>>',typeLog
+            print u'!!!! Log without image', idLog, dateLog, u'%r'%titleCache,'>>>',typeLog
 
-        listeImages.sort(key=lambda e: e[2]) # panoramas are displayed after the other images - sort by field panora
+        # listeImages.sort(key=lambda e: e[2]) # panoramas are displayed after the other images - sort by field panora
 
-        for log in listeImages:
-            typeImage = ('pano' if log[2] else 'image')
+        for (img, caption, panora) in listeImages:
+            typeImage = ('pano' if panora else 'image')
             # at this point, no information is available on the size of image
-            # assume a standard format 640x480 (nostalgia of the 80's?)            
-            self.fXML.write("<%s>%s<height>480</height><width>640</width><comment>%s</comment></%s>\n"%(typeImage,log[0],log[1],typeImage))
+            # assume a standard format 640x480 (nostalgia of the 80's?)
+            if typeImage == 'pano':
+                img = re.sub('/display/', '/', img)
+            self.fXML.write("<%s>%s<height>480</height><width>640</width><comment>%s</comment></%s>\n"%(typeImage, img, caption, typeImage))
 
     # images with "panorama" or "panoramique" in the caption are supposed to be wide pictures
     def __isPanorama(self, title):
@@ -327,7 +329,7 @@ if __name__ == '__main__':
         # second phase : from XML to generated HTML
         if re.search(".htm[l]*", args[1], re.IGNORECASE):
             import xml2print
-            xml2print.xml2print(xmlFile, args[1])
+            xml2print.xml2print(xmlFile, args[1], printing=False, groupPanoramas=True)
         print "That's all folks!"
     else:
         usage()
