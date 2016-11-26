@@ -192,7 +192,13 @@ class Logbook(object):
                         os.makedirs(dirLog)
                     url = 'http://www.geocaching.com/'+url+'/log.aspx?LUID='+idLog
                     print "Fetching log", url
-                    dataLog = urllib2.urlopen(url).read().decode('utf-8')
+                    try: 
+                        dataLog = urllib2.urlopen(url).read().decode('utf-8')
+                        print "Saving log file "+idLog
+                        with codecs.open(dirLog+idLog, 'w', 'utf-8') as fw:
+                            fw.write(dataLog)
+                    except urllib2.HTTPError as e:
+                        print e 
                     print "Saving log file "+idLog
                     with codecs.open(dirLog+idLog, 'w', 'utf-8') as fw:
                         fw.write(dataLog)
