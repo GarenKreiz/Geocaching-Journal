@@ -123,6 +123,9 @@ def flushSubGallery(fOut,pictures):
     print a sub gallery of images in sequence
     """
 
+    if pictures == []:
+        return
+    
     rowCount = 0       # current number of images in row
     panoramas = []
     
@@ -182,7 +185,7 @@ def xml2print(xmlInput, htmlOutput, printing=False, groupPanoramas=False):
         if tag in ['<image>','<pano>','<post>','<date>','</text>']:
             flushText(fOut,text)
             text = ''
-        if pictures <> [] and tag not in ['<image>', '<pano>']:
+        if tag not in ['<image>', '<pano>']:
             flushGallery(fOut,pictures,groupPanoramas)
             pictures = []
             
@@ -285,9 +288,8 @@ def xml2print(xmlInput, htmlOutput, printing=False, groupPanoramas=False):
 
         l = f.readline()
 
-    if pictures <> []:
-        # the logbook ends with images
-        flushGallery(fOut, pictures, groupPanoramas)
+    # flush remaining images if any
+    flushGallery(fOut, pictures, groupPanoramas)
 
     fOut.write(postEnd + htmlEnd)
     fOut.close()
