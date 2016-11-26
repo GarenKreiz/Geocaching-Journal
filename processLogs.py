@@ -160,7 +160,7 @@ class Logbook(object):
             if keepLog and idLog <> '':
                 try:
                     days[dateLog].append((idLog, idCache, titleCache, typeLog, natureLog))
-                except:
+                except KeyError:
                     days[dateLog] = [(idLog, idCache, titleCache, typeLog, natureLog)]
                 if self.verbose:
                     print "%s|%s|%s|%s|%s|%s"%(idLog, dateLog, idCache, titleCache, typeLog, natureLog)
