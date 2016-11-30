@@ -99,7 +99,7 @@ def cleanText(textInput, allTags=True):
     return resu
 
 
-def flushGallery(fOut, pictures, groupPanoramas=False):
+def flushGallery(fOut, pictures, groupPanoramas=False, compactGallery=False):
     """
     print the image gallery of a post, possibly grouping all panoramas at the end
     """
@@ -112,13 +112,13 @@ def flushGallery(fOut, pictures, groupPanoramas=False):
                 panoramas.append((format, image, comment, width, height))
             else:
                 plainPictures.append((format, image, comment, width, height))
-        flushSubGallery(fOut,plainPictures)
-        flushSubGallery(fOut,panoramas)
+        flushSubGallery(fOut,plainPictures,compactGallery)
+        flushSubGallery(fOut,panoramas, compactGallery=False)
     else:
-        flushSubGallery(fOut,pictures)
+        flushSubGallery(fOut,pictures, compactGallery=False)
 
 
-def flushSubGallery(fOut,pictures):
+def flushSubGallery(fOut, pictures, compactGallery=False):
     """
     print a sub gallery of images in sequence
     """
@@ -128,7 +128,10 @@ def flushSubGallery(fOut,pictures):
     
     rowCount = 0       # current number of images in row
     panoramas = []
-    
+
+    if compactGallery and len(pictures) % 3 > 0:
+        # Starting with a row of 2 pictures
+        rowCount = 1
     fOut.write('<table class="table-pictures"><tr>')
     for (format, image, comment, width, height) in pictures:
         comment = re.sub('&pad;', '', comment)
@@ -139,7 +142,7 @@ def flushSubGallery(fOut,pictures):
             rowCount = 0
         rowCount = (maxRow if format == 'panorama' else rowCount + 1)
         fOut.write('<td>')
-            
+
         # specific to geocaching logs : open a full sized view of picture
         imageFullSize = re.sub('https://img.geocaching.com/cache/log/display/', 'https://img.geocaching.com/cache/log/', image)
         popupLink = '<a href="javascript:popstatic(\'%s\',\'.\');">'%imageFullSize
@@ -160,7 +163,7 @@ def flushText(fOut,text):
         fOut.write(text)
 
 
-def xml2print(xmlInput, htmlOutput, printing=False, groupPanoramas=False):
+def xml2print(xmlInput, htmlOutput, printing=False, groupPanoramas=False, compactGallery=False):
     """
     main function of module : generation of an HTML file from an XML file
     """
@@ -186,7 +189,7 @@ def xml2print(xmlInput, htmlOutput, printing=False, groupPanoramas=False):
             flushText(fOut,text)
             text = ''
         if tag not in ['<image>', '<pano>']:
-            flushGallery(fOut,pictures,groupPanoramas)
+            flushGallery(fOut,pictures,groupPanoramas,compactGallery)
             pictures = []
             
         if tag == '<image>' or tag == '<pano>':
@@ -289,7 +292,7 @@ def xml2print(xmlInput, htmlOutput, printing=False, groupPanoramas=False):
         l = f.readline()
 
     # flush remaining images if any
-    flushGallery(fOut, pictures, groupPanoramas)
+    flushGallery(fOut, pictures, groupPanoramas, compactGallery)
 
     fOut.write(postEnd + htmlEnd)
     fOut.close()
@@ -302,17 +305,18 @@ if __name__ == "__main__":
         print help on program
         """
 
-        print 'Usage: python xml2print.py [-p|--printing] [-g|--groupPanoramas] logbook.xml logbook.html'
+        print 'Usage: python xml2print.py [-p|--printing] [-g|--groupPanoramas] [-c|--compactGallery] logbook.xml logbook.html'
         sys.exit()
 
     import getopt
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "hpg", ['help', 'printing', 'groupPanoramas'])
+        opts, args = getopt.getopt(sys.argv[1:], "hpgc", ['help', 'printing', 'groupPanoramas','compactGallery'])
     except getopt.GetoptError:
         usage()
 
     printing = False
     groupPanoramas = False
+    compactGallery = False
     for opt, arg in opts:
         if opt == '-h':
             usage()
@@ -320,10 +324,12 @@ if __name__ == "__main__":
             printing = True
         elif opt == "-g":
             groupPanoramas = True
+        elif opt == "-c":
+            compactGallery = True
 
     if len(args) == 2:
         try:
-            xml2print(args[0], args[1], printing, groupPanoramas)
+            xml2print(args[0], args[1], printing, groupPanoramas, compactGallery)
         except Exception, msg:
             print "Problem:",msg
         print "That's all, folks!"
