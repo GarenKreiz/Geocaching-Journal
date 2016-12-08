@@ -25,7 +25,7 @@ These scripts were tested on Python 2.7.
 $ python processLogs.py geocaching_logs.html logbook.xml
 ```
 
-* Check the content of the file : the title and description can be directly edited in the file or in [processLogs.py](processLogs.py) 
+* Check the content of the file : the title and description can be directly edited in the file [logbook_header.xml](logbook_header.xml) 
 * Run the [xml2print.py](xml2print.py) script to generate an HTML file **logbook.html**
 
 ```
@@ -72,7 +72,6 @@ $ python xml2print.py -h
 
 In [processLogs.py](processLogs.py)
 
-
 * string to match to classify a picture as a panorama (currently captions with "panoram")
 
 In file [logbook_header.xml](logbook_header.xml)
@@ -86,7 +85,8 @@ In the generated XML file
 
 In [xml2print.py](xml2print.py) 
 
-* numbers of columns for pictures
+* max numbers of columns for pictures 
+* options at execution : --groupPanoramas, --compactGallery
 
 In [logbook.css](logbook.css)
 
@@ -112,15 +112,15 @@ Ces scripts ont été testés avec Python 2.7
 
 * Vérifier les préférences du site geocaching : le format des dates doit être numérique (à l'exception du format "mm/jj/aa")
 * Faire une sauvegarde locale de la page contenant tous vos logs https://www.geocaching.com/my/logs.aspx?s=1 , par exemple dans le fichier **geocaching_logs.html**. Le format de la sauvegarde doit être de l'HTML simple.
-* Lancer le script [processLogs.py](processLogs.py) pour généré un fichier XML **logbook.xml**
+* Lancer le script [processLogs.py](processLogs.py) pour générer un fichier XML **logbook.xml**
 * Cela crée un répertoire **Logs** contenant un cache local des descriptions HTML des notes
 * Note: le script engrendre une rafale de requêtes vers www.geocaching.com sans temporisation. Vérifiez les clauses d'utilisation de ce site web.
 ```
 $ python processLogs.py geocaching_logs.html logbook.xml
 ```
 
-* Vérifier le contenu du fichier : le titre et la description du journal peuvent être modifiés dans le fichier ou au début du fichier [processLogs.py](processLogs.py)
-* Run the [xml2print.py](xml2print.py)  script to generate an HTML file
+* Vérifier le contenu du fichier : le titre et la description du journal peuvent être modifiés dans le fichier [logbook_header.xml](logbook_header.xml)
+* Lancer le script [xml2print.py](xml2print.py) pour générer un fichier HHTML
 
 ```
 $ python xml2print.py logbook.xml logbook.html
@@ -149,7 +149,7 @@ ou
 \ xml2print.exe logbook.xml logbook.html
 ```
 
-* Si le text d'une entrée du journal est modifiée ou si des photos ont été ajoutées, il faut utiliser l'option "--refresh" pour forcer la mise à jour du cache local des pages web des logs. Par exemple, pour la journée AAAA/MM/JJ, faire
+* Si le texte d'une entrée du journal a été modifié ou si des photos ont été ajoutées, il faut utiliser l'option "--refresh" pour forcer la mise à jour du cache local des pages web des logs. Par exemple, pour la journée AAAA/MM/JJ, faire
 
 ```
 $ python processLogs.py -s AAAA/MM/JJ -e AAAA/MM/JJ -r geocaching_logs.html logbook.html
@@ -180,7 +180,8 @@ Dans le fichier XML généré
 
 Dans le fichier [xml2print.py](xml2print.py) 
 
-* disposition en colonnes des photos
+* nombre maximum de colonnes des photos 
+* options pour l'exécution : --groupPanoramas, --compactGallery
 
 Dans le fichier [logbook.css](logbook.css)
 
