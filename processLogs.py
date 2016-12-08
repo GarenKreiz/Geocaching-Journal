@@ -333,7 +333,7 @@ if __name__ == '__main__':
         # second phase : from XML to generated HTML
         if re.search(".htm[l]*", args[1], re.IGNORECASE):
             import xml2print
-            xml2print.xml2print(xmlFile, args[1], printing=False, groupPanoramas=True)
+            xml2print.xml2print(xmlFile, args[1], printing=False, groupPanoramas=True, compactGallery=True)
         print "That's all folks!"
     else:
         usage()
