@@ -193,6 +193,12 @@ Dans le fichier [logbook.css](logbook.css)
 
 ![Example](https://raw.githubusercontent.com/GarenKreiz/Geocaching-Journal/master/logbook_example.jpg)
 
+# Releases - Versions
+
+* 1.2.0 : journal for trackables, option to exclude some types of logs, option for galleries presentation
+* 1.1.0 : generation of a journal between two dates
+* 1.0.0 : initial release
+
 # Credits - Remerciements
 
 Merci aux testeurs Ato-Club et TofLaBeuze.
