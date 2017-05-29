@@ -86,7 +86,7 @@ In the generated XML file
 In [xml2print.py](xml2print.py) 
 
 * max numbers of columns for pictures 
-* options at execution : --groupPanoramas, --compactGallery
+* options at execution : --groupPanoramas, --compactGallery, --mosaic mosaic_file.html
 
 In [logbook.css](logbook.css)
 
@@ -181,7 +181,7 @@ Dans le fichier XML généré
 Dans le fichier [xml2print.py](xml2print.py) 
 
 * nombre maximum de colonnes des photos 
-* options pour l'exécution : --groupPanoramas, --compactGallery
+* options pour l'exécution : --groupPanoramas, --compactGallery, --mosaic fichier_mosaic.html
 
 Dans le fichier [logbook.css](logbook.css)
 

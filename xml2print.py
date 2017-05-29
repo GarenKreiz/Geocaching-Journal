@@ -84,6 +84,28 @@ pictureFormatTemplate = """
 </tbody></table>
 """
 
+headerMosaic = """
+<style>
+body {
+    font-size:0;
+    }
+.thumb {
+    display: inline-block;
+    width: 80px;
+    height: 80px;
+    margin: 0px;
+    border: 1px solid #000000;
+    background-position: center center;
+    background-size: cover;
+    margin:0px;outline:none;
+    vertical-align: top;
+    padding: 0px;
+    object-fit: cover;
+}
+</style>
+</head>
+<body>
+"""
 
 def cleanText(textInput, allTags=True):
     """
@@ -132,13 +154,13 @@ def flushSubGallery(fOut, pictures, compactGallery=False):
     if compactGallery and len(pictures) % 3 > 0:
         # Starting with a row of 2 pictures
         rowCount = 1
-    fOut.write('<table class="table-pictures"><tr>')
+    fOut.write('<table class="table-pictures"><tr>\n')
     for (format, image, comment, width, height) in pictures:
         comment = re.sub('&pad;', '', comment)
         if format == 'panorama' and rowCount > 0 or rowCount == maxRow:
             # start a new row of pictures
-            fOut.write('</tr></table>')
-            fOut.write('<table class="table-pictures"><tr>')
+            fOut.write('</tr></table>\n')
+            fOut.write('<table class="table-pictures"><tr>\n')
             rowCount = 0
         rowCount = (maxRow if format == 'panorama' else rowCount + 1)
         fOut.write('<td>')
@@ -148,8 +170,8 @@ def flushSubGallery(fOut, pictures, compactGallery=False):
         popupLink = '<a href="javascript:popstatic(\'%s\',\'.\');">'%imageFullSize
         fOut.write(popupLink + pictureFormatTemplate % (format, image, comment) + '</a>')
         comment = re.sub('<br>', '', comment)
-        fOut.write('</td>')
-    fOut.write('</tr></table>')
+        fOut.write('</td>\n')
+    fOut.write('</tr></table>\n')
 
 
 def flushText(fOut,text):
@@ -163,7 +185,7 @@ def flushText(fOut,text):
         fOut.write(text)
 
 
-def xml2print(xmlInput, htmlOutput, printing=False, groupPanoramas=False, compactGallery=False):
+def xml2print(xmlInput, htmlOutput, printing=False, groupPanoramas=False, compactGallery=False, mosaic=None):
     """
     main function of module : generation of an HTML file from an XML file
     """
@@ -178,6 +200,10 @@ def xml2print(xmlInput, htmlOutput, printing=False, groupPanoramas=False, compac
 
     print "Processing", xmlInput
     f = open(xmlInput, 'r')
+
+    allPictures = {}       # all picture descriptions
+    currentLocation = ''
+    currentURL = ''
     
     l = f.readline().strip()
     while l <> '':
@@ -208,6 +234,11 @@ def xml2print(xmlInput, htmlOutput, printing=False, groupPanoramas=False, compac
                 (_, image, height, _, width, _, comment, _, _) = imgDesc
             else:
                 print '!!!!!!!!!!!!! Bad image format:', line
+            try:
+                allPictures[image].append((comment,currentLocation,currentURL))
+                print "Image en double :", image, currentLocaltion, currentURL
+            except:
+                allPictures[image] = [(comment,currentLocation,currentURL)]
             if tag == '<pano>':
                 pictures.append(('panorama', image, comment, width, height))
             elif height > width:
@@ -257,6 +288,8 @@ def xml2print(xmlInput, htmlOutput, printing=False, groupPanoramas=False, compac
             elements = post.split('|')
             if len(elements) > 1:
                 post = '<a href="' + elements[1] + '" target="_blank">' + elements[0].strip() + '</a>'
+                currentLocation = elements[0].strip()
+                currentURL = elements[1]
                 if len(elements) > 2:
                     post = '<div class="alignleft">' + post + '</div>'
                     log = elements[2].strip()
@@ -265,6 +298,8 @@ def xml2print(xmlInput, htmlOutput, printing=False, groupPanoramas=False, compac
                     post = post + '<div class="alignright">' + log + '</div>'
             else:
                 post = elements[0].strip()
+                currentLocation = post
+                currentURL = ''
             fOut.write(postBegin + post + postMiddle)
 
         elif tag == '<text>':
@@ -298,25 +333,46 @@ def xml2print(xmlInput, htmlOutput, printing=False, groupPanoramas=False, compac
     fOut.close()
     print "Result file:", htmlOutput
 
+    if (mosaic):
+        try:
+            print "Creating mosaic page",mosaic
+            fOut = open(mosaic,'w')
+            fOut.write(headerStart)
+            fOut.write(headerMosaic)
 
+            kPictures = allPictures.keys()
+            kPictures.sort()
+            for k in kPictures:
+                for (comment, location, url) in allPictures[k]:
+                    #fOut.write('<a href="%s" target="_blank"><div class="thumb" title="%s" style="background-image: url(\'%s\');"></div></a>"\n'%(url,comment,k))
+                    fOut.write('<a href="%s" target="_blank"><img class="thumb" title="%s" src="%s" /></a>"'%(url,comment,k))
+            fOut.write('</body></html>\n')
+            fOut.close()
+        except:
+            print "Problem creating mosaic page :",mosaic
+            
 if __name__ == "__main__":
     def usage():
         """
         print help on program
         """
 
-        print 'Usage: python xml2print.py [-p|--printing] [-g|--groupPanoramas] [-c|--compactGallery] logbook.xml logbook.html'
+        print 'Usage: python xml2print.py logbook.xml logbook.html'
+        print ''
+        print 'Options: [-p|--printing] [-g|--groupPanoramas] [-c|--compactGallery]'
+        print '         [-m|--mosaic logbook_mosaic.html]'
         sys.exit()
 
     import getopt
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "hpgc", ['help', 'printing', 'groupPanoramas','compactGallery'])
+        opts, args = getopt.getopt(sys.argv[1:], "hpgcm:", ['help', 'printing', 'groupPanoramas','compactGallery','mosaic'])
     except getopt.GetoptError:
         usage()
 
     printing = False
     groupPanoramas = False
     compactGallery = False
+    mosaic = None
     for opt, arg in opts:
         if opt == '-h':
             usage()
@@ -326,10 +382,12 @@ if __name__ == "__main__":
             groupPanoramas = True
         elif opt == "-c":
             compactGallery = True
+        elif opt == "-m":
+            mosaic = arg
 
     if len(args) == 2:
         try:
-            xml2print(args[0], args[1], printing, groupPanoramas, compactGallery)
+            xml2print(args[0], args[1], printing, groupPanoramas, compactGallery, mosaic)
         except Exception, msg:
             print "Problem:",msg
         print "That's all, folks!"
