@@ -30,7 +30,7 @@ body {
     margin: 0;
     padding: 0 0;
     background-color: rgb(230, 145, 56);
-    #background: url('logbook.jpg') ;
+    /* background: url('logbook.jpg') ; */
     background: #5f452a url("http://www.geocaching.com/images/tlnMasters/topographic-footer.png");
     text-align: center;
 }
@@ -67,7 +67,7 @@ h2.date-header {
     color: rgb(163, 140, 35);
     padding: 5px 12px;
     margin: 0;
-    #background: url('logbook.jpg');
+    /* background: url('logbook.jpg'); */
     background: #5f452a url("http://www.geocaching.com/images/tlnMasters/topographic-footer.png");
 }
 .post-entry {
@@ -82,16 +82,16 @@ h2.date-header {
 .post-banner {
     margin: 14px 18px 0px;
     padding: 8px;
-    color: background: rgb(230, 145, 56);
-    #background:url('logbook.jpg');
+    /* background: rgb(230, 145, 56); */
+    /* background:url('logbook.jpg'); */
     background: #5f452a url("http://www.geocaching.com/images/tlnMasters/topographic-footer.png");
-    style="page-break-before:always;"
+    page-break-before: always;
 }
 .post-entry p {
     margin: 6px 0px 6px 0px;
     padding: 0px 4px 0px 4px;
     text-align: justify;
-    text-justify: inter-word;   
+    /* text-justify: inter-word;   */
 }
 .post-body {
     clear: both;
@@ -105,7 +105,6 @@ h2.date-header {
     color: rgb(255, 255, 255);
     text-align: center;
     margin: auto;
-    padding: auto;
     width: 256px;
 }
 .picture tr {
@@ -113,7 +112,7 @@ h2.date-header {
 }
 .picture img {
     display: block;
-    #max-width:764px;
+    /* max-width:764px; */
     width:256px;
     height:192px;
     margin: auto;
