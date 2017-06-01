@@ -4,7 +4,8 @@
 ################################################################################
 # xml2print.py
 #
-#     transforms an XML description of a logbook or blog intro HTML
+#     transforms an XML description of a logbook or blog into HTML
+#     generates a random mosaic of a small sqare version of all pictures
 #
 #     tags : title, description, date, post, text, image, pano
 #
@@ -124,25 +125,13 @@ headerPopup="""
     font-size:0;
     }
 </style>
-  <script language="JavaScript1.2">
+<script language="JavaScript">
 <!--
 
-function showPopup(DivID, iState) // 1 visible, 0 hidden
+function showPopup(id, state) 
 {
-    if(document.layers)	   //NN4+
-    {
-       document.layers[DivID].visibility = iState ? "show" : "hide";
-    }
-    else if(document.getElementById)	  //gecko(NN6) + IE 5+
-    {
-        var obj = document.getElementById(DivID);
-        obj.style.visibility = iState ? "visible" : "hidden";
-    }
-    else if(document.all)	// IE 4
-    {
-        document.all[DivID].style.visibility = iState ? "visible" : "hidden";
-    }
-    //document.all[DivID].innerHTML='<img src="Images/4ab3942f-4265-4a18-8618-5dab312f55fb.jpg">';
+    var obj = document.getElementById(id);
+    obj.style.visibility = state ? "visible" : "hidden";
 };
 
 function popImage(dir,url,name)
@@ -262,7 +251,7 @@ def flushSubGallery(fOut, pictures, compactGallery=False):
 
         # specific to geocaching logs : open a full sized view of picture
         imageFullSize = re.sub('https://img.geocaching.com/cache/log/display/', 'https://img.geocaching.com/cache/log/', image)
-        popupLink = '<a href="javascript:void(0)" onclick="javascript:popImage(\'.\',\'%s\',\'.\');">'%imageFullSize
+        popupLink = '<a href="javascript:void(0)" onclick="javascript:popImage(\'.\',\'%s\',\'%s\');">'%(imageFullSize,comment)
         fOut.write(popupLink + pictureFormatTemplate % (format, image, comment) + '</a>')
         comment = re.sub('<br>', '', comment)
         fOut.write('</td>\n')
@@ -449,7 +438,7 @@ def xml2print(xmlInput, htmlOutput, printing=False, groupPanoramas=False, compac
             kPictures.sort()
             for k in kPictures:
                 for (comment, location, url1, url2) in allPictures[k]:
-                    fOut.write('<a onclick="popMosaic(this,\'%s\',\'%s\');"><img class="thumb" title="%s" src="%s" /></a>"'%(url1,url2, comment,k))
+                    fOut.write('<a onclick="popMosaic(this,\'%s\',\'%s\');"><img class="thumb" title="%s" src="%s" /></a>\n'%(url1,url2, comment,k))
             fOut.write('</div>\n')
             fOut.write(bodyPopup)
             fOut.write('</body></html>\n')
