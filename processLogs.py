@@ -137,7 +137,7 @@ class Logbook(object):
         days = {}
 
         idLog = None
-        with codecs.open(self.fNameInput, 'r', 'utf-8') as fIn:
+        with codecs.open(self.fNameInput, 'rb', 'utf-8') as fIn:
             cacheData = fIn.read()
         tagTable = re.search('<table class="Table">(.*)</table>', cacheData, re.S|re.M).group(1)
         tagTr = re.finditer('<tr(.*?)</tr>', tagTable, re.S)
@@ -163,7 +163,10 @@ class Logbook(object):
                 except KeyError:
                     days[dateLog] = [(idLog, idCache, titleCache, typeLog, natureLog)]
                 if self.verbose:
-                    print "%s|%s|%s|%s|%s|%s"%(idLog, dateLog, idCache, titleCache, typeLog, natureLog)
+                    try:
+                        print "%s|%s|%s|%s|%s|%s"%(idLog, dateLog, idCache, titleCache, typeLog, natureLog)
+                    except Exception, msg:
+                        print "%s|%s|%s|%r|%s|%s"%(idLog, dateLog, idCache, titleCache, typeLog, natureLog)
         dates = days.keys()
         dates.sort()
         for dateLog in dates:
@@ -202,8 +205,6 @@ class Logbook(object):
                         continue
                 else:
                     with codecs.open(dirLog+idLog, 'r', 'utf-8') as fr:
-                        if self.verbose:
-                            print "Loading for cache " + titleCache
                         dataLog = fr.read()
                 # grabbing information from the log page
                 self.parseLog(dataLog, dateLog, idLog, idCache, titleCache, typeLog, natureLog)
