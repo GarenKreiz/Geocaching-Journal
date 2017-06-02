@@ -44,6 +44,12 @@ $  firefox logbook.html
 $ python processLogs.py geocaching_logs.html logbook.html
 ```
 
+* To generate a mosaic file **mosaic.html**
+
+```
+$ python xml2print.py -m mosaic.html logbook.xml logbook.html
+```
+
 * Before launching the executable versions, copy the files [logbook_header.xml](logbook_header.xml) and [logbook.css](logbook.css) to the working directory and customize them.
 
 ```
@@ -138,6 +144,13 @@ $  firefox logbook.html
 $ python processLogs.py geocaching_logs.html logbook.html
 ```
 
+* Pour générer une mosaïque des images **mosaic.html**
+
+```
+$ python xml2print.py -m mosaic.html logbook.xml logbook.html
+```
+
+
 * Avant d'exécuter les versions binaires des programmes (Windows), copier les fichiers [logbook_header.xml](logbook_header.xml) and [logbook.css](logbook.css) dans le répertoire de travail puis éventuellement en modifier le contenu pour paramétrer la génération.
 
 ```
@@ -195,6 +208,7 @@ Dans le fichier [logbook.css](logbook.css)
 
 # Releases - Versions
 
+* 1.3.0 : popup window for images, mosaic of images
 * 1.2.0 : journal for trackables, option to exclude some types of logs, option for galleries presentation
 * 1.1.0 : generation of a journal between two dates
 * 1.0.0 : initial release
