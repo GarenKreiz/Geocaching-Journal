@@ -140,4 +140,42 @@ h2.date-header {
     text-align: center;
     width: 33%;
 }
-
+#popupLayer {
+    position:fixed;
+    top: 50px;
+    left: 50px;
+    visibility:hidden;
+    border:solid 1px #000000;
+    background-color:#FF9933;
+}
+#popupWindow {
+    display: table;
+    max-width: inherit;
+    max-height: inherit;
+}
+#popupBar {
+    width:100%;
+    font: 14px Arial,Tahoma,Helvetica,FreeSans,sans-serif;
+    display: table-row;
+}
+#popupClose {
+    cursor:pointer; position:absolute; right:5px; top:0px;
+    font-weight: bold;
+}
+#popupClose a {
+    text-decoration: none;
+}
+#popupContent {
+    display: table-row;
+}
+#popupImage {
+    max-width: 1200px;
+    max-height: 1000px;
+}
+#popupButtons {
+    display: table-row;
+    visibility:hidden;
+}
+.mosaic {
+    font-size:0;
+}
