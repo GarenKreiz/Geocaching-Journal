@@ -104,8 +104,7 @@ function popImage(dir,url,name)
     console.log(name);
     var image = document.getElementById('popupContent').getElementsByTagName('img')[0];
     image.src = url;
-    var text = name.replace(/_#39_/g,"\'");
-    document.getElementById('popupTitle').innerHTML = text;
+    document.getElementById('popupTitle').innerHTML = name;
     showPopup('popupLayer',1);
 };
 
@@ -217,7 +216,8 @@ def flushSubGallery(fOut, pictures, compactGallery=False):
 
         # specific to geocaching logs : open a full sized view of picture
         imageFullSize = re.sub('https://img.geocaching.com/cache/log/display/', 'https://img.geocaching.com/cache/log/', image)
-        commentSafe = re.sub('\'','_#39_',comment)
+        commentSafe = re.sub('\'','\&apos;',comment)
+        commentSafe = re.sub('\"','\&quot;',commentSafe)
         popupLink = '<a href="javascript:void(0)" onclick="javascript:popImage(\'.\',\'%s\',\'%s\');">'%(imageFullSize,commentSafe)
         fOut.write(popupLink + pictureFormatTemplate % (format, image, comment) + '</a>')
         comment = re.sub('<br>', '', comment)
