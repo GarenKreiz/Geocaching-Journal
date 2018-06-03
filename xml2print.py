@@ -33,6 +33,8 @@ import sys
 import string
 
 maxRow = 3   # number of pictures in a row (less than 4)
+allPictures = {};  # all picture descriptions
+
 
 headerStart = """<!DOCTYPE html>
 <html>
@@ -61,7 +63,7 @@ dateFormat = '<div class="date"><h2 class="date-header">%s</h2><div class="post-
 postBegin = '<h3 class="post-title">'
 postMiddle = '</h3>'
 postBanner = '<div class="post-banner"></div><div class="post-entry">'
-postEnd = '</div>  <!--// class:post-entry //-->'
+postEnd = '</div>'
 dateEnd = '</div>  <!--// class:date //-->'
 htmlEnd = '</body></html>'
 
@@ -93,18 +95,43 @@ headerPopup="""
 <script language="JavaScript">
 <!--
 
+function selectPicture(imageUrl, imageName, logUrl,cacheUrl)
+{
+    var text = document.getElementById('selectionLayer').innerHTML;
+    if (text == '')
+    {
+       text += '<h2 class="date-header">Images</h2>';
+    };
+    text += '<div class="post-banner"></div><div class="post-entry">';
+    text += '<h3 class="post-title">';
+    text += '<div class="alignleft"><a href="'+ cacheUrl + '" target="_blank">' + 'Cache' + '</a></div>';
+    text += '<div class="alignright"><a href="'+ logUrl + '" target="_blank">' + 'Log' + '</a></div>';
+    text += '</h3>';
+    text += '<h3 class="post-title">' + imageName + '<br />';
+    text += '<img align="middle" src="' + imageUrl + '"></div></h3></div>';
+    document.getElementById('selectionLayer').innerHTML = text;
+    document.getElementById('selectionLayer').style.visibility = "visible";
+    closePopImage();
+};
+
 function showPopup(id, state) 
 {
     var obj = document.getElementById(id);
     obj.style.visibility = state ? "visible" : "hidden";
 };
 
-function popImage(dir,url,name)
+function popImage(url,name,cacheUrl,logUrl)
 {
-    console.log(name);
+    console.log(name+" "+url);
+    console.log(cacheUrl+" "+logUrl);
     var image = document.getElementById('popupContent').getElementsByTagName('img')[0];
     image.src = url;
-    document.getElementById('popupTitle').innerHTML = name;
+    document.getElementById('popupTitle').innerHTML = "&nbsp;&nbsp;"+name;
+    document.getElementById('showCache'    ).setAttribute("onclick","window.open('" + cacheUrl + "', '_blank');");
+    document.getElementById('showLog'      ).setAttribute("onclick","window.open('" + logUrl + "', '_blank');");
+    console.log(url+'|'+name+'|'+logUrl+'|'+cacheUrl);
+    document.getElementById('selectPicture').setAttribute("onclick","selectPicture('" + url + "','" + name + "','" + logUrl + "','" + cacheUrl + "');");
+    showPopup('popupButtons',1);
     showPopup('popupLayer',1);
 };
 
@@ -112,15 +139,8 @@ function closePopImage()
 {
     var image = document.getElementById('popupContent').getElementsByTagName('img')[0];
     image.src = "";
-};
-
-function popMosaic(here,cacheURL,logURL)
-{
-	var image = here.getElementsByTagName('img')[0];
-	popImage('.',image.src,image.title);
-	document.getElementById('showCache').setAttribute("onclick","window.open('"+cacheURL+"', '_blank');");
-	document.getElementById('showLog'  ).setAttribute("onclick","window.open('"+logURL+"', '_blank');");
-        showPopup('popupButtons',1);
+    showPopup('popupLayer',0);
+    showPopup('popupButtons',0);
 };
 
 // -->
@@ -137,23 +157,29 @@ bodyPopup="""
 <div id="popupLayer">
   <div id="popupWindow">
     <div id="popupBar">
-        <div id="popupTitle"> TITRE </div>
         <div id="popupClose" >
             <a href="javascript:void(0);"
-               onClick="closePopImage();showPopup('popupLayer',0);showPopup('popupButtons',0);return false" >
+               onClick="closePopImage();return false" >
                X</a>
         </div>
+        <div>&nbsp</div>
+        <div id="popupTitle"> TITRE </div>
     </div>
     <div id="popupContent">
-      <img id="popupImage" src="">
+      <img id="p<opupImage" src="">
     </div>
     <div id="popupButtons">
       <input type="button" id="showLog"   value="Log"   onclick="window.open('', '_blank');"  >
       <input type="button" id="showCache" value="Cache" onclick="window.open('', '_blank');"  >
+      <input type="button" id="selectPicture" value="Select" onclick="window.open('', '_blank');"  >
     </div>
   </div>
 </div>
-<!-- End Floating layer -->
+<!-- End Popup layer -->
+<!-- Console Layer -->
+<div id="selectionLayer"></div>
+<!-- End Console layer -->
+
 """
 
 def cleanText(textInput, allTags=True):
@@ -188,7 +214,10 @@ def flushGallery(fOut, pictures, groupPanoramas=False, compactGallery=False):
     else:
         flushSubGallery(fOut,pictures, compactGallery=False)
 
-
+def safeString(s):
+    s = re.sub('\'','\&apos;',s)
+    return re.sub('\"','\&quot;',s)
+    
 def flushSubGallery(fOut, pictures, compactGallery=False):
     """
     print a sub gallery of images in sequence
@@ -216,9 +245,10 @@ def flushSubGallery(fOut, pictures, compactGallery=False):
 
         # specific to geocaching logs : open a full sized view of picture
         imageFullSize = re.sub('https://img.geocaching.com/cache/log/display/', 'https://img.geocaching.com/cache/log/', image)
-        commentSafe = re.sub('\'','\&apos;',comment)
-        commentSafe = re.sub('\"','\&quot;',commentSafe)
-        popupLink = '<a href="javascript:void(0)" onclick="javascript:popImage(\'.\',\'%s\',\'%s\');">'%(imageFullSize,commentSafe)
+        commentSafe = safeString(comment)
+        for (comment, location, url1, url2) in allPictures[image]:
+            print "------------", location, url1, url2
+        popupLink = '<a href="javascript:void(0)" onclick="javascript:popImage(\'%s\',\'%s\',\'%s\',\'%s\');">'%(imageFullSize,commentSafe, url1, url2)
         fOut.write(popupLink + pictureFormatTemplate % (format, image, comment) + '</a>')
         comment = re.sub('<br>', '', comment)
         fOut.write('</td>\n')
@@ -252,7 +282,6 @@ def xml2print(xmlInput, htmlOutput, printing=False, groupPanoramas=False, compac
     print "Processing", xmlInput
     f = open(xmlInput, 'r')
 
-    allPictures = {}       # all picture descriptions
     currentLocation = ''
     currentURL = ''
     currentAdditionalURL = ''
@@ -405,7 +434,7 @@ def xml2print(xmlInput, htmlOutput, printing=False, groupPanoramas=False, compac
             kPictures.sort()
             for k in kPictures:
                 for (comment, location, url1, url2) in allPictures[k]:
-                    fOut.write('<a onclick="popMosaic(this,\'%s\',\'%s\');"><img class="thumb" title="%s" src="%s" /></a>\n'%(url1,url2, comment,k))
+                    fOut.write('<a onclick="popImage(\'%s\',\'%s\',\'%s\',\'%s\');"><img class="thumb" title="%s" src="%s" /></a>\n'%(k,safeString(comment),url1,url2,comment,k))
             fOut.write('</div>\n')
             fOut.write(bodyPopup)
             fOut.write('</body></html>\n')
