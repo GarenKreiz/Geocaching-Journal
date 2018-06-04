@@ -14,6 +14,12 @@ Generation of a journal of geocaching logs
 
 These scripts were tested on Python 2.7.
 
+## Installation
+
+* Make sure Python is available on you machine
+* Use Git to get the source or extract an [archive](https://github.com/GarenKreiz/Geocaching-Journal/archive/master.zip)
+* On Windows, one may extract a binary version of the program from the [latest release](https://github.com/GarenKreiz/Geocaching-Journal/releases/latest)
+
 ## Usage
 
 * On the geocaching web site, verify that your date format preferences are in numerical form ("MM/DD/YY" not supported)
@@ -34,6 +40,7 @@ $ python xml2print.py logbook.xml logbook.html
 ```
 
 * Verify the result in any browser. Warning: it can take quite a long time depending on the number of logs and pictures and the speed of the Internet access!
+* Click on images to display them or select them.
 
 ```
 $  firefox logbook.html
@@ -120,7 +127,13 @@ Generation d'un journal des notes de géocaching
 
 Ces scripts ont été testés avec Python 2.7
 
-## Usage
+## Installation
+
+* Vérifier que Python est bien installé sur votre machine
+* Utiliser Git pour récupérer les sources ou  extraire une [archive](https://github.com/GarenKreiz/Geocaching-Journal/archive/master.zip)
+* Sur Windows, il est possible d'utiliser une version binaire du programme en utilisant l'archive de la [dernière distribution](https://github.com/GarenKreiz/Geocaching-Journal/releases/latest)
+
+## Utilisation
 
 * Vérifier les préférences du site geocaching : le format des dates doit être numérique (à l'exception du format "mm/jj/aa")
 * Faire une sauvegarde locale de la page contenant tous vos logs https://www.geocaching.com/my/logs.aspx?s=1 , par exemple dans le fichier **geocaching_logs.html**. Le format de la sauvegarde doit être de l'HTML simple.
@@ -140,6 +153,7 @@ $ python xml2print.py logbook.xml logbook.html
 ```
 
 * Vérifier le résultat avec un navigateur web. Cela peut prendre un certain temps, en fonction du nombre de notes et de photos et en fonction du débit d'accès à l'Internet.
+* Cliquer sur les images pour les visualiser ou les sélectionner.
 
 ```
 $  firefox logbook.html
