@@ -163,7 +163,10 @@ class Logbook(object):
                 except KeyError:
                     days[dateLog] = [(idLog, idCache, titleCache, typeLog, natureLog)]
                 if self.verbose:
-                    print "%s|%s|%s|%s|%s|%s"%(idLog, dateLog, idCache, titleCache, typeLog, natureLog)
+                    try:
+                        print "%s|%s|%s|%s|%s|%s"%(idLog, dateLog, idCache, titleCache, typeLog, natureLog)
+                    except:
+                        print "%s|%s|%s|%r|%s|%s"%(idLog, dateLog, idCache, titleCache, typeLog, natureLog)
         dates = days.keys()
         dates.sort()
         for dateLog in dates:
@@ -203,7 +206,10 @@ class Logbook(object):
                 else:
                     with codecs.open(dirLog+idLog, 'r', 'utf-8') as fr:
                         if self.verbose:
-                            print "Processing cache " + titleCache
+                            try:
+                                print "Processing cache " + titleCache
+                            except:
+                                print "Processing cache %r"%titleCache
                         dataLog = fr.read()
                 # grabbing information from the log page
                 self.parseLog(dataLog, dateLog, idLog, idCache, titleCache, typeLog, natureLog)
