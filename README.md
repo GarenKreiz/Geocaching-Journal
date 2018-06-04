@@ -20,7 +20,7 @@ These scripts were tested on Python 2.7.
 * Save locally the content of the web page https://www.geocaching.com/my/logs.aspx?s=1 , for example in file **geocaching_logs.html**. Save it as a plain HTML file.
 * Run the [processLogs.py](processLogs.py) script to generate an XML file for example **logbook.xml**.
 * It create a directory Logs to save the logs' HTML page before parsing them.
-* Warning: the script may generate lots of access to www.geocaching.com without timeout. Check the License Agreement of this web site.
+* Warning: the script may generate lots of accesses to www.geocaching.com without timeout. Check the License Agreement of this web site. It may be safe to run the program to get the log for small periods of time ("-s" and "-e" option)
 
 ```
 $ python processLogs.py geocaching_logs.html logbook.xml
@@ -67,6 +67,10 @@ or
 ```
 $ python processLogs.py -s AAAA/MM/DD -e AAAA/MM/DD -r geocaching_logs.html logbook.html
 ```
+
+## Generated web page
+
+For each log, the cache page and the log page are directly accessible by clicking on the corresponding text. Clicking on a picture opens a new windows with the original bigger version of the picture. The picture can be selected, adding it to the selected pictures' list that appears at the end of the main page. 
 
 ## Help
 
@@ -122,7 +126,8 @@ Ces scripts ont été testés avec Python 2.7
 * Faire une sauvegarde locale de la page contenant tous vos logs https://www.geocaching.com/my/logs.aspx?s=1 , par exemple dans le fichier **geocaching_logs.html**. Le format de la sauvegarde doit être de l'HTML simple.
 * Lancer le script [processLogs.py](processLogs.py) pour générer un fichier XML **logbook.xml**
 * Cela crée un répertoire **Logs** contenant un cache local des descriptions HTML des notes
-* Note: le script engrendre une rafale de requêtes vers www.geocaching.com sans temporisation. Vérifiez les clauses d'utilisation de ce site web.
+* Note: le script engrendre une rafale de requêtes vers www.geocaching.com sans temporisation. Vérifiez les clauses d'utilisation de ce site web. Il est recommandé de ne récupérer à chaque fois que les logs pour une courte période (options "-s" et "-e")
+
 ```
 $ python processLogs.py geocaching_logs.html logbook.xml
 ```
@@ -169,6 +174,10 @@ ou
 ```
 $ python processLogs.py -s AAAA/MM/JJ -e AAAA/MM/JJ -r geocaching_logs.html logbook.html
 ```
+
+## Page web générée
+
+Pour chaque entrée du journal, le page de la cache courante et celle du log sont directement accessibles en cliquant sur le texte. En cliquant sur une photo, une nouvelle fenêtre s'ouvre qui l'affiche dans sa taille d'origine et permet de la sélectionner. La liste des photos sélectionnée apparaît à la fin de la page principale.
 
 ## Aide
 
