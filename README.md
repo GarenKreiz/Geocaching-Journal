@@ -9,6 +9,7 @@ Generation of a journal of geocaching logs
 * download of a backup of the logs' web pages
 * customization of HTML output with CSS styles or inside the scripts
 * identification of logs without pictures
+* generate additionnal list of selected pictures
 * requires no external modules
 
 These scripts were tested on Python 2.7.
@@ -110,6 +111,7 @@ Generation d'un journal des notes de géocaching
 * génération d'un fichier XML  contenant le texte des notes et la liste des images
 * téléchargement d'une sauvegarde locale des pages web des notes
 * identification des notes sans photo
+* génération d'une liste additionnelle pour une sélection de photos
 * paramétrisation du fichier HTML généré avec des styles CSS ou par modification des scripts
 
 Ces scripts ont été testés avec Python 2.7
