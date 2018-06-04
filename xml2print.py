@@ -101,13 +101,21 @@ var currentCacheUrl;
 var currentLogUrl;
 var currentCacheName;
 
+function popupSelection() {
+    var win = window.open("", "Title", "");
+    win.document.head.innerHTML = document.getElementsByTagName('head')[0].innerHTML;
+    var text = document.getElementById('selectionLayer').innerHTML;
+    win.document.body.innerHTML = text;
+    win.document.getElementsById('popupSelectionButton').style.visibility = hidden;
+};
+
 function selectPicture()
 {
     var text = document.getElementById('selectionLayer').innerHTML;
-    console.log("PictureName "+currentPictureName);
     if (text == '')
     {
-       text += '<h2 class="date-header">Images</h2>';
+       text = '<h2 class="date-header">Images</h2><button id="popupSelectionButton" onclick="popupSelection();">Open window</button>';
+       text = '<h2 class="date-header">Images</h2>';
     };
     text += '<div class="post-banner"></div><div class="post-entry">';
     text += '<h3 class="post-title">';
@@ -135,6 +143,7 @@ function popImage(url,name,cacheUrl,logUrl,cacheName)
     currentPictureUrl = url;
     currentPictureName = name;
     currentCacheUrl = cacheUrl;
+    currentLogUrl = logUrl
     currentCacheName = cacheName;
     currenLogUrl = logUrl;
     var image = document.getElementById('popupContent').getElementsByTagName('img')[0];
@@ -240,11 +249,8 @@ def flushGallery(fOut, pictures, groupPanoramas=False, compactGallery=False):
         flushSubGallery(fOut,pictures, compactGallery=False)
 
 def safeString(s):
-    print "SafeString ",s,
     s = re.sub('\'','\&apos;',s)
-    print s,
     s = re.sub('&#39;','\&apos;',s)
-    print s
     return re.sub('\"','\&quot;',s)
     
 def flushSubGallery(fOut, pictures, compactGallery=False):
@@ -274,8 +280,7 @@ def flushSubGallery(fOut, pictures, compactGallery=False):
 
         # specific to geocaching logs : open a full sized view of picture
         imageFullSize = re.sub('https://img.geocaching.com/cache/log/display/', 'https://img.geocaching.com/cache/log/', image)
-        for (comment, location, url1, url2, cacheName) in allPictures[image]:
-            print "------------", location, url1, url2
+        (comment, location, url1, url2, cacheName) = allPictures[image][-1]
         popupLink = '<a href="javascript:void(0)" onclick="javascript:popImage(\'%s\',\'%s\',\'%s\',\'%s\',\'%s\');">'%(imageFullSize,safeString(comment), url1, url2, safeString(cacheName))
         fOut.write(popupLink + pictureFormatTemplate % (format, image, comment) + '</a>')
         comment = re.sub('<br>', '', comment)
@@ -345,7 +350,6 @@ def xml2print(xmlInput, htmlOutput, printing=False, groupPanoramas=False, compac
                 (_, image, height, _, width, _, comment, _, _) = imgDesc
             else:
                 print '!!!!!!!!!!!!! Bad image format:', line
-            print "Adding image ", comment, elements[0], log
             try:
                 allPictures[image].append((comment,currentLocation,currentURL,currentAdditionalURL,elements[0]))
                 print "Image en double :", image, currentLocaltion, currentURL
