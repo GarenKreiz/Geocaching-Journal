@@ -95,20 +95,27 @@ headerPopup="""
 <script language="JavaScript">
 <!--
 
-function selectPicture(imageUrl, imageName, logUrl,cacheUrl)
+var currentPictureUrl;
+var currentPictureName;
+var currentCacheUrl;
+var currentLogUrl;
+var currentCacheName;
+
+function selectPicture()
 {
     var text = document.getElementById('selectionLayer').innerHTML;
+    console.log("PictureName "+currentPictureName);
     if (text == '')
     {
        text += '<h2 class="date-header">Images</h2>';
     };
     text += '<div class="post-banner"></div><div class="post-entry">';
     text += '<h3 class="post-title">';
-    text += '<div class="alignleft"><a href="'+ cacheUrl + '" target="_blank">' + 'Cache' + '</a></div>';
-    text += '<div class="alignright"><a href="'+ logUrl + '" target="_blank">' + 'Log' + '</a></div>';
-    text += '</h3>';
-    text += '<h3 class="post-title">' + imageName + '<br />';
-    text += '<img align="middle" src="' + imageUrl + '"></div></h3></div>';
+    text += '<div class="alignleft"><a href="'+ currentCacheUrl + '" target="_blank">' + currentCacheName + '</a></div>';
+    text += '<div class="alignright"><a href="'+ currentLogUrl + '" target="_blank">' + 'Log' + '</a></div>';
+    text += '</h3><br />';
+    text += '<h3 class="post-title" align="middle">' + currentPictureName + '<br />';
+    text += '<img align="middle" width="100%" src="' + currentPictureUrl + '"></div></h3></div>';
     document.getElementById('selectionLayer').innerHTML = text;
     document.getElementById('selectionLayer').style.visibility = "visible";
     closePopImage();
@@ -120,17 +127,23 @@ function showPopup(id, state)
     obj.style.visibility = state ? "visible" : "hidden";
 };
 
-function popImage(url,name,cacheUrl,logUrl)
+function popImage(url,name,cacheUrl,logUrl,cacheName)
 {
     console.log(name+" "+url);
     console.log(cacheUrl+" "+logUrl);
+    console.log("name "+cacheName);
+    currentPictureUrl = url;
+    currentPictureName = name;
+    currentCacheUrl = cacheUrl;
+    currentCacheName = cacheName;
+    currenLogUrl = logUrl;
     var image = document.getElementById('popupContent').getElementsByTagName('img')[0];
     image.src = url;
     document.getElementById('popupTitle').innerHTML = "&nbsp;&nbsp;"+name;
     document.getElementById('showCache'    ).setAttribute("onclick","window.open('" + cacheUrl + "', '_blank');");
     document.getElementById('showLog'      ).setAttribute("onclick","window.open('" + logUrl + "', '_blank');");
     console.log(url+'|'+name+'|'+logUrl+'|'+cacheUrl);
-    document.getElementById('selectPicture').setAttribute("onclick","selectPicture('" + url + "','" + name + "','" + logUrl + "','" + cacheUrl + "');");
+    document.getElementById('selectPicture').setAttribute("onclick","selectPicture();");
     showPopup('popupButtons',1);
     showPopup('popupLayer',1);
 };
@@ -179,8 +192,20 @@ bodyPopup="""
 <!-- Console Layer -->
 <div id="selectionLayer"></div>
 <!-- End Console layer -->
-
+<!-- Template for selected image -->
+<div id="selectedImageTemplate" style="visibility:hidden;">
+  <div class="post-banner"></div>
+  <div class="post-entry">
+    <h3 class="post-title">
+      <div class="alignleft"><a href="" target="_blank">Cache</a></div>
+      <div class="alignright"><a href="" target="_blank">Log</a></div>
+    </h3>
+    <h3 class="post-title"><br><img src="" align="middle"></h3>
+  </div>
+</div>
+<!-- End Template for selected image -->
 """
+
 
 def cleanText(textInput, allTags=True):
     """
@@ -215,7 +240,11 @@ def flushGallery(fOut, pictures, groupPanoramas=False, compactGallery=False):
         flushSubGallery(fOut,pictures, compactGallery=False)
 
 def safeString(s):
+    print "SafeString ",s,
     s = re.sub('\'','\&apos;',s)
+    print s,
+    s = re.sub('&#39;','\&apos;',s)
+    print s
     return re.sub('\"','\&quot;',s)
     
 def flushSubGallery(fOut, pictures, compactGallery=False):
@@ -245,10 +274,9 @@ def flushSubGallery(fOut, pictures, compactGallery=False):
 
         # specific to geocaching logs : open a full sized view of picture
         imageFullSize = re.sub('https://img.geocaching.com/cache/log/display/', 'https://img.geocaching.com/cache/log/', image)
-        commentSafe = safeString(comment)
-        for (comment, location, url1, url2) in allPictures[image]:
+        for (comment, location, url1, url2, cacheName) in allPictures[image]:
             print "------------", location, url1, url2
-        popupLink = '<a href="javascript:void(0)" onclick="javascript:popImage(\'%s\',\'%s\',\'%s\',\'%s\');">'%(imageFullSize,commentSafe, url1, url2)
+        popupLink = '<a href="javascript:void(0)" onclick="javascript:popImage(\'%s\',\'%s\',\'%s\',\'%s\',\'%s\');">'%(imageFullSize,safeString(comment), url1, url2, safeString(cacheName))
         fOut.write(popupLink + pictureFormatTemplate % (format, image, comment) + '</a>')
         comment = re.sub('<br>', '', comment)
         fOut.write('</td>\n')
@@ -276,6 +304,8 @@ def xml2print(xmlInput, htmlOutput, printing=False, groupPanoramas=False, compac
     pictures = []
     processingPost = False
     text = ''
+    elements = []
+    log = None
 
     fOut.write(headerStart)
 
@@ -315,11 +345,12 @@ def xml2print(xmlInput, htmlOutput, printing=False, groupPanoramas=False, compac
                 (_, image, height, _, width, _, comment, _, _) = imgDesc
             else:
                 print '!!!!!!!!!!!!! Bad image format:', line
+            print "Adding image ", comment, elements[0], log
             try:
-                allPictures[image].append((comment,currentLocation,currentURL,currentAdditionalURL))
+                allPictures[image].append((comment,currentLocation,currentURL,currentAdditionalURL,elements[0]))
                 print "Image en double :", image, currentLocaltion, currentURL
             except:
-                allPictures[image] = [(comment,currentLocation,currentURL,currentAdditionalURL)]
+                allPictures[image] = [(comment,currentLocation,currentURL,currentAdditionalURL,elements[0])]
             if tag == '<pano>':
                 pictures.append(('panorama', image, comment, width, height))
             elif height > width:
@@ -433,8 +464,8 @@ def xml2print(xmlInput, htmlOutput, printing=False, groupPanoramas=False, compac
             kPictures = allPictures.keys()
             kPictures.sort()
             for k in kPictures:
-                for (comment, location, url1, url2) in allPictures[k]:
-                    fOut.write('<a onclick="popImage(\'%s\',\'%s\',\'%s\',\'%s\');"><img class="thumb" title="%s" src="%s" /></a>\n'%(k,safeString(comment),url1,url2,comment,k))
+                for (comment, location, url1, url2, cacheName) in allPictures[k]:
+                    fOut.write('<a onclick="popImage(\'%s\',\'%s\',\'%s\',\'%s\',\'%s\');"><img class="thumb" title="%s" src="%s" /></a>\n'%(k,safeString(comment),url1,url2,safeString(cacheName),comment,k))
             fOut.write('</div>\n')
             fOut.write(bodyPopup)
             fOut.write('</body></html>\n')

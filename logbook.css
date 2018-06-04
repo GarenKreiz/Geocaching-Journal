@@ -159,8 +159,11 @@ h2.date-header {
     display: table-row;
 }
 #popupClose {
-    cursor:pointer; position:absolute; right:5px; top:0px;
+    cursor:pointer; position:absolute; left:5px; top:0px;
     font-weight: bold;
+}
+#popupTitle {
+    position:absolute; left:15px; top:0px;
 }
 #popupClose a {
     text-decoration: none;
