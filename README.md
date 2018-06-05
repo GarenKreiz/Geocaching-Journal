@@ -18,7 +18,7 @@ These scripts were tested on Python 2.7.
 
 * Make sure Python is available on you machine
 * Use Git to get the source or extract an [archive](https://github.com/GarenKreiz/Geocaching-Journal/archive/master.zip)
-* On Windows, one may extract a binary version of the program from the [latest release](https://github.com/GarenKreiz/Geocaching-Journal/releases/latest)
+* On Windows, one may extract a binary version of the program from a ZIP archive associated to the [latest release](https://github.com/GarenKreiz/Geocaching-Journal/releases/latest)
 
 ## Usage
 
@@ -131,7 +131,7 @@ Ces scripts ont été testés avec Python 2.7
 
 * Vérifier que Python est bien installé sur votre machine
 * Utiliser Git pour récupérer les sources ou  extraire une [archive](https://github.com/GarenKreiz/Geocaching-Journal/archive/master.zip)
-* Sur Windows, il est possible d'utiliser une version binaire du programme en utilisant l'archive de la [dernière distribution](https://github.com/GarenKreiz/Geocaching-Journal/releases/latest)
+* Sur Windows, il est possible d'utiliser une version binaire du programme en utilisant l'archive ZIP de la [dernière distribution](https://github.com/GarenKreiz/Geocaching-Journal/releases/latest)
 
 ## Utilisation
 
