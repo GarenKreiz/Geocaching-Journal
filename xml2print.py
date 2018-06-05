@@ -36,6 +36,8 @@ import string
 maxRow = 3   # number of pictures in a row (less than 4)
 allPictures = {};  # all picture descriptions
 
+# HTML templates to generate the web page
+
 headerStart = """<!DOCTYPE html>
 <html>
 <head>
@@ -65,7 +67,6 @@ postMiddle = '</h3>'
 postBanner = '<div class="post-banner"></div><div class="post-entry">'
 postEnd = '</div>'
 dateEnd = '</div>  <!--// class:date //-->'
-htmlEnd = '</body></html>'
 
 pictureFormatTemplate = """
 <table class="picture"><tbody>
@@ -89,7 +90,8 @@ headerMosaic = """
     padding: 0px;
     object-fit: cover;
     }
-</style>"""
+</style>
+"""
 
 headerPopup="""
 <script language="JavaScript">
@@ -102,26 +104,20 @@ var currentLogUrl;
 var currentCacheName;
 
 function downloadSelection() {
-  var filename = 'selectionImages.html';
-  var element = document.createElement('a');
-  var text = "<html><head>";
-  text += document.getElementsByTagName('head')[0].innerHTML;
-  text += "</head><body>";
-  text += document.getElementById('selectionBody').innerHTML;
-  text += "</body></html>";
+    var filename = 'selectionImages.html';
+    var element = document.createElement('a');
+    var text = "<html><head>";
+    text += document.getElementsByTagName('head')[0].innerHTML;
+    text += "</head><body>";
+    text += document.getElementById('selectionBody').innerHTML;
+    text += "</body></html>";
 
-  console.log(filename);
-  console.log(text);
-  
-  element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
-  element.setAttribute('download', filename);
-
-  element.style.display = 'none';
-  document.body.appendChild(element);
-
-  element.click();
-
-  document.body.removeChild(element);
+    element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
+    element.setAttribute('download', filename);
+    element.style.display = 'none';
+    document.body.appendChild(element);
+    element.click();
+    document.body.removeChild(element);
 };
 
 function selectPicture()
@@ -137,7 +133,7 @@ function selectPicture()
     text += '<div class="alignright"><a href="'+ currentLogUrl + '" target="_blank">' + 'Log' + '</a></div>';
     text += '</h3><br />';
     text += '<h3 class="post-title" align="middle">' + currentPictureName + '<br />';
-    text += '<img align="middle" width="100%" src="' + currentPictureUrl + '"></div></h3></div>';
+    text += '<img align="middle" style="max-width: 100%;" src="' + currentPictureUrl + '"></div></h3></div>';
     document.getElementById('selectionBody').innerHTML = text;
     document.getElementById('selectionLayer').style.visibility = "visible";
     closePopImage();
@@ -151,9 +147,6 @@ function showPopup(id, state)
 
 function popImage(url,name,cacheUrl,logUrl,cacheName)
 {
-    console.log(name+" "+url);
-    console.log(cacheUrl+" "+logUrl);
-    console.log("name "+cacheName);
     currentPictureUrl = url;
     currentPictureName = name;
     currentCacheUrl = cacheUrl;
@@ -165,7 +158,6 @@ function popImage(url,name,cacheUrl,logUrl,cacheName)
     document.getElementById('popupTitle').innerHTML = "&nbsp;&nbsp;"+name;
     document.getElementById('showCache'    ).setAttribute("onclick","window.open('" + cacheUrl + "', '_blank');");
     document.getElementById('showLog'      ).setAttribute("onclick","window.open('" + logUrl + "', '_blank');");
-    console.log(url+'|'+name+'|'+logUrl+'|'+cacheUrl);
     document.getElementById('selectPicture').setAttribute("onclick","selectPicture();");
     showPopup('popupButtons',1);
     showPopup('popupLayer',1);
@@ -188,7 +180,7 @@ bodyMosaic="""
 <body>
 """
 
-bodyPopup="""
+htmlEnd="""
 <!-- Popup Layer -->
 <div id="popupLayer">
   <div id="popupWindow">
@@ -213,7 +205,10 @@ bodyPopup="""
 </div>
 <!-- End Popup layer -->
 <!-- Console Layer -->
-<div id="selectionLayer"><div id="selectionMenu"><button id="saveSelectionButton" onclick="downloadSelection();">Save</button></div><div id="selectionBody"></div></div>
+<div id="selectionLayer">
+  <button onclick="downloadSelection();">Save</button>
+  <div id="selectionBody"></div>
+</div>
 <!-- End Console layer -->
 <!-- Template for selected image -->
 <div id="selectedImageTemplate" style="visibility:hidden;">
@@ -227,7 +222,17 @@ bodyPopup="""
   </div>
 </div>
 <!-- End Template for selected image -->
+</body></html>
 """
+
+
+def safeString(s):
+    """
+    process single and double quotes
+    """
+    s = re.sub('\'','\&apos;',s)
+    s = re.sub('&#39;','\&apos;',s)
+    return re.sub('\"','\&quot;',s)
 
 
 def cleanText(textInput, allTags=True):
@@ -262,11 +267,7 @@ def flushGallery(fOut, pictures, groupPanoramas=False, compactGallery=False):
     else:
         flushSubGallery(fOut,pictures, compactGallery=False)
 
-def safeString(s):
-    s = re.sub('\'','\&apos;',s)
-    s = re.sub('&#39;','\&apos;',s)
-    return re.sub('\"','\&quot;',s)
-    
+
 def flushSubGallery(fOut, pictures, compactGallery=False):
     """
     print a sub gallery of images in sequence
@@ -335,6 +336,7 @@ def xml2print(xmlInput, htmlOutput, printing=False, groupPanoramas=False, compac
     currentURL = ''
     currentAdditionalURL = ''
     
+    # process each item of the XML input file
     l = f.readline().strip()
     while l <> '':
         # analyse of the XML tag
@@ -464,9 +466,9 @@ def xml2print(xmlInput, htmlOutput, printing=False, groupPanoramas=False, compac
     flushGallery(fOut, pictures, groupPanoramas, compactGallery)
 
     fOut.write(postEnd)
-    fOut.write(bodyPopup)
     fOut.write(htmlEnd)
     fOut.close()
+
     print "Result file:", htmlOutput
 
     if (mosaic):
@@ -485,12 +487,12 @@ def xml2print(xmlInput, htmlOutput, printing=False, groupPanoramas=False, compac
                 for (comment, location, url1, url2, cacheName) in allPictures[k]:
                     fOut.write('<a onclick="popImage(\'%s\',\'%s\',\'%s\',\'%s\',\'%s\');"><img class="thumb" title="%s" src="%s" /></a>\n'%(k,safeString(comment),url1,url2,safeString(cacheName),comment,k))
             fOut.write('</div>\n')
-            fOut.write(bodyPopup)
-            fOut.write('</body></html>\n')
+            fOut.write(htmlEnd)
             fOut.close()
         except Exception, msg:
             print "Problem creating mosaic page :",mosaic, msg
-            
+
+
 if __name__ == "__main__":
     def usage():
         """
