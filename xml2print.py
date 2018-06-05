@@ -6,10 +6,11 @@
 #
 #     transforms an XML description of a logbook or blog into HTML
 #     generates a random mosaic of a small sqare version of all pictures
+#     allow the selection of some pictures
 #
 #     tags : title, description, date, post, text, image, pano
 #
-# Copyright GarenKreiz at  geocaching.com or on  YouTube
+# Copyright GarenKreiz at  geocaching.com or on  YouTube 2010-2018
 # Auteur    GarenKreiz sur geocaching.com ou sur YouTube
 #
 # Licence:
@@ -34,7 +35,6 @@ import string
 
 maxRow = 3   # number of pictures in a row (less than 4)
 allPictures = {};  # all picture descriptions
-
 
 headerStart = """<!DOCTYPE html>
 <html>
@@ -101,21 +101,35 @@ var currentCacheUrl;
 var currentLogUrl;
 var currentCacheName;
 
-function popupSelection() {
-    var win = window.open("", "Title", "");
-    win.document.head.innerHTML = document.getElementsByTagName('head')[0].innerHTML;
-    var text = document.getElementById('selectionLayer').innerHTML;
-    win.document.body.innerHTML = text;
-    win.document.getElementsById('popupSelectionButton').style.visibility = hidden;
+function downloadSelection() {
+  var filename = 'selectionImages.html';
+  var element = document.createElement('a');
+  var text = "<html><head>";
+  text += document.getElementsByTagName('head')[0].innerHTML;
+  text += "</head><body>";
+  text += document.getElementById('selectionBody').innerHTML;
+  text += "</body></html>";
+
+  console.log(filename);
+  console.log(text);
+  
+  element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
+  element.setAttribute('download', filename);
+
+  element.style.display = 'none';
+  document.body.appendChild(element);
+
+  element.click();
+
+  document.body.removeChild(element);
 };
 
 function selectPicture()
 {
-    var text = document.getElementById('selectionLayer').innerHTML;
+    var text = document.getElementById('selectionBody').innerHTML;
     if (text == '')
     {
-       text = '<h2 class="date-header">Images</h2><button id="popupSelectionButton" onclick="popupSelection();">Open window</button>';
-       text = '<h2 class="date-header">Images</h2>';
+       text = '<h2 class="date-header">Selection Images</h2>';
     };
     text += '<div class="post-banner"></div><div class="post-entry">';
     text += '<h3 class="post-title">';
@@ -124,7 +138,7 @@ function selectPicture()
     text += '</h3><br />';
     text += '<h3 class="post-title" align="middle">' + currentPictureName + '<br />';
     text += '<img align="middle" width="100%" src="' + currentPictureUrl + '"></div></h3></div>';
-    document.getElementById('selectionLayer').innerHTML = text;
+    document.getElementById('selectionBody').innerHTML = text;
     document.getElementById('selectionLayer').style.visibility = "visible";
     closePopImage();
 };
@@ -199,7 +213,7 @@ bodyPopup="""
 </div>
 <!-- End Popup layer -->
 <!-- Console Layer -->
-<div id="selectionLayer"></div>
+<div id="selectionLayer"><div id="selectionMenu"><button id="saveSelectionButton" onclick="downloadSelection();">Save</button></div><div id="selectionBody"></div></div>
 <!-- End Console layer -->
 <!-- Template for selected image -->
 <div id="selectedImageTemplate" style="visibility:hidden;">
