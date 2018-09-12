@@ -63,31 +63,51 @@ class Logbook(object):
         self.nDates = 0          # number of processed dates
         self.nLogs = 0           # number of processed logs
 
+    def getLog(self, dateLog, idLog, idCache, titleCache, typeLog, natureLog):
+        # LogsTB dedicated directory for TB logs as ID may be reused between TB and cache logs
+        url, dirLog = (('track', 'LogsTB') if natureLog == 'T' else ('seek', 'Logs'))
+        dirLog = dirLog + '/_%s_/'%idLog[0]
+        if not os.path.isfile(dirLog+idLog) or self.refresh:
+            if not os.path.isdir(dirLog):
+                print "Creating directory "+dirLog
+                os.makedirs(dirLog)
+            url = 'http://www.geocaching.com/'+url+'/log.aspx?LUID='+idLog
+            print "Fetching log", url
+            try:
+                dataLog = urllib2.urlopen(url).read().decode('utf-8')
+                print "Saving log file "+idLog
+                with codecs.open(dirLog+idLog, 'w', 'utf-8') as fw:
+                    fw.write(dataLog)
+            except (urllib2.HTTPError, urllib2.URLError), msg:
+                print "Error accessing log "+idLog, msg
+                return
+        else:
+            with codecs.open(dirLog+idLog, 'r', 'utf-8') as fr:
+                if self.verbose:
+                    print "Processing cache " + titleCache
+                dataLog = fr.read()
+        return self.parseLog(dataLog, dateLog, idLog, idCache, titleCache, typeLog, natureLog)
+    
+
     def parseLog(self, dataLog, dateLog, idLog, idCache, titleCache, typeLog, natureLog):
         """
         analyses the HTML content of a log page
         """
 
         text = ''
+        listeImages = []
 
-        url, urlLog = (('seek/cache_', 'seek') if natureLog == 'C' else ('track/', 'track'))
+        url, urlLog = (('track/', 'track') if natureLog == 'T' else ('seek/cache_', 'seek'))
         if url == 'track/' and 'cache_details.aspx' in dataLog:
             # adding the name of the cache where the trackable is, if present in the log
             titleTb = re.search('cache_details.aspx\?guid=([^>]*)">(.*?)</a>', dataLog, re.S).group(2)
             titleCache = titleCache + ' @ ' + titleTb
-        self.fXML.write('<post>%s | http://www.geocaching.com/%sdetails.aspx?guid=%s |'%(titleCache, url, idCache))
-        self.fXML.write('%s | http://www.geocaching.com/%s/log.aspx?LUID=%s</post>\n'%(typeLog, urlLog, idLog))
 
         if '_LogText">' in dataLog:
             text = re.search('_LogText">(.*?)</span>', dataLog, re.S).group(1)
             text = re.sub('src="/images/', 'src="http://www.geocaching.com/images/', text)
-            self.fXML.write('<text>%s</text>\n'%text)
         else:
-            self.fXML.write('<text> </text>\n')
             print "!!!! Log unavailable", idLog
-            return
-
-        listeImages = []
 
         if 'LogBookPanel1_GalleryList' in dataLog: #if Additional images
             tagTable = re.search('<table id="ctl00_ContentBody_LogBookPanel1_GalleryList(.*?)</table>',dataLog, re.S).group(0)
@@ -105,6 +125,22 @@ class Logbook(object):
         else:
             print u'!!!! Log without image', idLog, dateLog, u'%r'%titleCache,'>>>',typeLog
 
+        return (titleCache,text,listeImages)
+
+    def outputLog(self, dateLog, idLog, idCache, titleCache, typeLog, natureLog, textLog, listeImages):
+        """
+        analyses the HTML content of a log page
+        """
+
+        url, urlLog = (('track/', 'track') if natureLog == 'T' else ('seek/cache_', 'seek'))
+        if natureLog <> 'C':
+          self.fXML.write('<post>%s | http://www.geocaching.com/%sdetails.aspx?guid=%s |'%(titleCache, url, idCache))
+        else:
+          self.fXML.write('<post>%s | http://www.geocaching.com/profile/?guid=%s |'%(titleCache, idCache))
+        self.fXML.write('%s | http://www.geocaching.com/%s/log.aspx?LUID=%s</post>\n'%(typeLog, urlLog, idLog))
+
+        self.fXML.write('<text>%s</text>\n'%textLog)
+
         # listeImages.sort(key=lambda e: e[2]) # panoramas are displayed after the other images - sort by field panora
 
         for (img, caption, panora) in listeImages:
@@ -114,7 +150,7 @@ class Logbook(object):
             if typeImage == 'pano':
                 img = re.sub('/display/', '/', img)
             self.fXML.write("<%s>%s<height>480</height><width>640</width><comment>%s</comment></%s>\n"%(typeImage, img, caption, typeImage))
-
+    
     # images with "panorama" or "panoramique" in the caption are supposed to be wide pictures
     def __isPanorama(self, title):
         return (True if re.search('panoram', title, re.IGNORECASE) else False)
@@ -139,18 +175,36 @@ class Logbook(object):
         idLog = None
         with codecs.open(self.fNameInput, 'r', 'utf-8') as fIn:
             cacheData = fIn.read()
-        tagTable = re.search('<table class="Table">(.*)</table>', cacheData, re.S|re.M).group(1)
+        natureLog = re.search('<body([^>]*)', cacheData).group(1)
+        natureLog = 'C' if re.search('CacheDetail',natureLog) else 'L'
+        if natureLog == 'C':
+            tagTable = re.search('<table id="cache_logs_table"[^>]*>(.*)</table>', cacheData, re.S|re.M).group(1)
+        else:
+            tagTable = re.search('<table class="Table">(.*)</table>', cacheData, re.S|re.M).group(1)
         tagTr = re.finditer('<tr(.*?)</tr>', tagTable, re.S)
         listTr = [result.group(1) for result in tagTr]
         for tr in listTr:
             td = re.finditer('<td>(.*?)</td>', tr, re.S)
             listTd = [result.group(1) for result in td]
-            dateLog = self.__normalizeDate(listTd[2].strip())
-            typeLog = re.search('title="(.*)".*>', listTd[0]).group(1)
-            idCache = re.search('guid=(.*?)"', listTd[3]).group(1)
-            idLog = re.search('LUID=(.*?)"', listTd[5]).group(1)
-            titleCache = re.search('</a> <a(.*)?\">(.*)</a>', listTd[3]).group(2).replace('</span>', '')
-            natureLog = ('C' if listTd[3].find('cache_details') > 1 else 'T') # C for Cache and T for trackable
+            imagesList = []
+            if natureLog == 'C':
+                if  len(listTd) == 0:
+                    break
+                divs = re.search('href="([^"]*")[^>]*>([^<]+)</a>.*title="(.+)" alt.*LogDate">(.+)</span>.*LogText">(.*)</div>.*href="([^"]+")',listTd[0], re.S)
+                textLog = divs.group(5)
+                dateLog = self.__normalizeDate(divs.group(4))
+                typeLog = divs.group(3)
+                idCache = re.search('guid=(.*?)"', divs.group(1)).group(1)
+                idLog = re.search('LUID=(.*?)"',divs.group(6)).group(1)
+                titleCache =  divs.group(2)
+            else:
+                textLog = None
+                dateLog = self.__normalizeDate(listTd[2].strip())
+                typeLog = re.search('title="(.*)".*>', listTd[0]).group(1)
+                idCache = re.search('guid=(.*?)"', listTd[3]).group(1)
+                idLog = re.search('LUID=(.*?)"', listTd[5]).group(1)
+                titleCache = re.search('</a> <a(.*)?\">(.*)</a>', listTd[3]).group(2).replace('</span>', '')
+                natureLog = ('L' if listTd[3].find('cache_details') > 1 else 'T') # C for Cache and T for trackable
             allLogs += 1
  
             # keeping the logs that are not excluded by -x option
@@ -159,14 +213,11 @@ class Logbook(object):
             keepLog = (False if len([excluded for excluded in self.excluded if excluded.lower() in typeLog.lower()]) else True)
             if keepLog and idLog <> '':
                 try:
-                    days[dateLog].append((idLog, idCache, titleCache, typeLog, natureLog))
+                    days[dateLog].append((idLog, idCache, titleCache, typeLog, natureLog, textLog, imagesList))
                 except KeyError:
-                    days[dateLog] = [(idLog, idCache, titleCache, typeLog, natureLog)]
+                    days[dateLog] = [(idLog, idCache, titleCache, typeLog, natureLog, textLog, imagesList)]
                 if self.verbose:
-                    try:
-                        print "%s|%s|%s|%s|%s|%s"%(idLog, dateLog, idCache, titleCache, typeLog, natureLog)
-                    except:
-                        print "%s|%s|%s|%r|%s|%s"%(idLog, dateLog, idCache, titleCache, typeLog, natureLog)
+                    print "%s|%s|%s|%s|%s|%s"%(idLog, dateLog, idCache, titleCache, typeLog, natureLog)
         dates = days.keys()
         dates.sort()
         for dateLog in dates:
@@ -180,39 +231,108 @@ class Logbook(object):
 
             dayLogs = days[dateLog]
             dayLogs.reverse()
-            for (idLog, idCache, titleCache, typeLog, natureLog) in dayLogs:
+            for (idLog, idCache, titleCache, typeLog, natureLog, textLog, imagesList) in dayLogs:
                 self.nLogs += 1
                 # logId, cacheId or tbID, title, type, nature
                 # building a local cache of the HTML page of each log
                 # directory: Logs and 16 sub-directories based on the first letter
 
-                # LogsTB dedicated directory for TB logs as ID may be reused between TB and cache logs
-                url, dirLog = (('seek', 'Logs') if natureLog == 'C' else ('track', 'LogsTB'))
-                dirLog = dirLog + '/_%s_/'%idLog[0]
-                if not os.path.isfile(dirLog+idLog) or self.refresh:
-                    if not os.path.isdir(dirLog):
-                        print "Creating directory "+dirLog
-                        os.makedirs(dirLog)
-                    url = 'http://www.geocaching.com/'+url+'/log.aspx?LUID='+idLog
-                    print "Fetching log", url
-                    try:
-                        dataLog = urllib2.urlopen(url).read().decode('utf-8')
-                        print "Saving log file "+idLog
-                        with codecs.open(dirLog+idLog, 'w', 'utf-8') as fw:
-                            fw.write(dataLog)
-                    except (urllib2.HTTPError, urllib2.URLError), msg:
-                        print "Error accessing log "+idLog, msg
-                        continue
-                else:
-                    with codecs.open(dirLog+idLog, 'r', 'utf-8') as fr:
-                        if self.verbose:
-                            try:
-                                print "Processing cache " + titleCache
-                            except:
-                                print "Processing cache %r"%titleCache
-                        dataLog = fr.read()
+                if not textLog:
+                    (cacheTitle, textLog, imagesList) = self.getLog(dateLog, idLog, idCache, titleCache, typeLog, natureLog)
+                self.outputLog(dateLog, idLog, idCache, titleCache, typeLog, natureLog, textLog, imagesList)
+
+        self.fXML.write('<date>Source : GarenKreiz/Geocaching-Journal @ GitHub (CC BY-NC 3.0 FR)</date>\n')
+        self.fXML.close()
+        print 'Logs: ', self.nLogs, '/', allLogs, 'Days:', self.nDates, '/', len(dates)
+        print 'Result file:', self.fNameOutput
+
+    def processCache(self):
+        """
+        analyse of the HTML page with the cache description and  the logs of the geocachers
+        source dump of a geocache page
+        """
+
+        try:
+            with codecs.open('logbook_header.xml', 'r', 'utf-8') as f:
+                self.fXML.write(f.read())
+        except:
+
+            self.fXML.write('<title>' + bookTitle + '</title>\n')
+            self.fXML.write('<description>' + bookDescription + '</description>\n')
+
+        allLogs = 0
+        days = {}
+
+        idLog = None
+        with codecs.open(self.fNameInput, 'r', 'utf-8') as fIn:
+            cacheData = fIn.read()
+        tagTable = re.search('<table id="cache_logs_table"[^>]*>(.*)</table>', cacheData, re.S|re.M).group(1)
+        tagTr = re.finditer('<tr(.*?)</tr>', tagTable, re.S)
+        listTr = [result.group(1) for result in tagTr]
+        for tr in listTr:
+            #td = re.finditer('<td>(.*?)</td>', tr, re.S)
+            #listTd = [result.group(1) for result in td]
+            try:
+              td = re.search('<td>(.*?)</td>', tr, re.S).group(1)
+            except:
+              break
+            divs = re.search('href="([^"]*")[^>]*>([^<]+)</a>.*title="(.+)" alt.*LogDate">(.+)</span>.*LogText">(.*)</div>.*href="([^"]+")',td, re.S)
+            #listTd = [result.group(1) for result in td]
+            profile = divs.group(1)
+            user = divs.group(2)
+            type = divs.group(3)
+            date = divs.group(4)
+            textLog = divs.group(5)
+            logURL = divs.group(6)
+            #dateLog = self.__normalizeDate(listTd[2].strip())
+            dateLog = self.__normalizeDate(date)
+            #typeLog = re.search('title="(.*)".*>', listTd[0]).group(1)
+            typeLog = type
+            #idCache = re.search('guid=(.*?)"', listTd[3]).group(1)
+            idCache = re.search('guid=(.*?)"', profile).group(1)
+            #idLog = re.search('LUID=(.*?)"', listTd[5]).group(1)
+            idLog = re.search('LUID=(.*?)"', logURL).group(1)
+            #titleCache = re.search('</a> <a(.*)?\">(.*)</a>', listTd[3]).group(2).replace('</span>', '')
+            titleCache = user
+            #natureLog = ('C' if listTd[3].find('cache_details') > 1 else 'T') # C for Cache and T for trackable
+            natureLog = 'L'
+            allLogs += 1
+ 
+            # keeping the logs that are not excluded by -x option
+            #keep = (True if typeLog.lower() in [item.lower() for item in self.excluded] else False)
+            #test short string research exclude - ex : -x Write for Write note or -x Found for Found it - etc.
+            keepLog = (False if len([excluded for excluded in self.excluded if excluded.lower() in typeLog.lower()]) else True)
+            if keepLog and idLog <> '':
+                try:
+                    days[dateLog].append((idLog, idCache, titleCache, typeLog, natureLog, textLog))
+                except KeyError:
+                    days[dateLog] = [(idLog, idCache, titleCache, typeLog, natureLog, textLog)]
+                if self.verbose:
+                    print "%s|%s|%s|%s|%s|%s"%(idLog, dateLog, idCache, titleCache, typeLog, natureLog)
+        dates = days.keys()
+        dates.sort()
+        for dateLog in dates:
+            # check if date is in the correct interval
+            if self.startDate and dateLog < self.startDate:
+                continue
+            if self.endDate and dateLog > self.endDate:
+                continue
+            self.nDates += 1
+            self.fXML.write('<date>%s</date>\n'%self.__formatDate(dateLog))
+
+            dayLogs = days[dateLog]
+            dayLogs.reverse()
+            for (idLog, idCache, titleCache, typeLog, natureLog, textLog) in dayLogs:
+                self.nLogs += 1
+                # logId, cacheId or tbID, title, type, nature
+                # building a local cache of the HTML page of each log
+                # directory: Logs and 16 sub-directories based on the first letter
+
                 # grabbing information from the log page
-                self.parseLog(dataLog, dateLog, idLog, idCache, titleCache, typeLog, natureLog)
+                if textLog == '':
+                    self.parseLog(dataLog, dateLog, idLog, idCache, titleCache, typeLog, natureLog)
+                else:
+                    self.outputLog(dateLog, idLog, idCache, titleCache, typeLog, natureLog, textLog, [])
 
         self.fXML.write('<date>Source : GarenKreiz/Geocaching-Journal @ GitHub (CC BY-NC 3.0 FR)</date>\n')
         self.fXML.close()
@@ -290,7 +410,7 @@ if __name__ == '__main__':
     import getopt
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "hrqs:e:x:", ['help', 'refresh', 'quiet', 'start', 'end', 'exclude'])
+        opts, args = getopt.getopt(sys.argv[1:], "hcrqs:e:x:", ['help', 'cache', 'refresh', 'quiet', 'start', 'end', 'exclude'])
     except getopt.GetoptError:
         usage()
 
