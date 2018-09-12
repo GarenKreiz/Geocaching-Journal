@@ -47,7 +47,13 @@ class Logbook(object):
     """
     Logbook : generate a list of logs with images for a geocacher
     """
-
+    # directories to save logs (different for TB to avoid conflicts
+    dirLog = { 'C': 'Logs', 'L': 'Logs', 'T':'LogsTB'}
+    # urls for different types of logs
+    urlsLogs = { 'C': 'seek', 'L': 'seek', 'T': 'track'}
+    # urls for cacherss, caches and trackable
+    urls = { 'C': 'profile', 'L': 'seek/cache_details.aspx', 'T': 'track/details.aspx'}
+    
     def __init__(self,
                  fNameInput, fNameOutput="logbook.xml",
                  verbose=True, startDate=None, endDate=None, refresh=False, excluded=[]):
@@ -64,14 +70,13 @@ class Logbook(object):
         self.nLogs = 0           # number of processed logs
 
     def getLog(self, dateLog, idLog, idCache, titleCache, typeLog, natureLog):
-        # LogsTB dedicated directory for TB logs as ID may be reused between TB and cache logs
-        url, dirLog = (('track', 'LogsTB') if natureLog == 'T' else ('seek', 'Logs'))
-        dirLog = dirLog + '/_%s_/'%idLog[0]
+        
+        dirLog = Logbook.dirLog[natureLog] + '/_%s_/'%idLog[0]
         if not os.path.isfile(dirLog+idLog) or self.refresh:
             if not os.path.isdir(dirLog):
                 print "Creating directory "+dirLog
                 os.makedirs(dirLog)
-            url = 'http://www.geocaching.com/'+url+'/log.aspx?LUID='+idLog
+            url = 'http://www.geocaching.com/'+Logbook.urlsLogs[natureLog]+'/log.aspx?LUID='+idLog
             print "Fetching log", url
             try:
                 dataLog = urllib2.urlopen(url).read().decode('utf-8')
@@ -97,8 +102,7 @@ class Logbook(object):
         text = ''
         listeImages = []
 
-        url, urlLog = (('track/', 'track') if natureLog == 'T' else ('seek/cache_', 'seek'))
-        if url == 'track/' and 'cache_details.aspx' in dataLog:
+        if natureLog == 'T' and 'cache_details.aspx' in dataLog:
             # adding the name of the cache where the trackable is, if present in the log
             titleTb = re.search('cache_details.aspx\?guid=([^>]*)">(.*?)</a>', dataLog, re.S).group(2)
             titleCache = titleCache + ' @ ' + titleTb
@@ -132,12 +136,8 @@ class Logbook(object):
         analyses the HTML content of a log page
         """
 
-        url, urlLog = (('track/', 'track') if natureLog == 'T' else ('seek/cache_', 'seek'))
-        if natureLog <> 'C':
-          self.fXML.write('<post>%s | http://www.geocaching.com/%sdetails.aspx?guid=%s |'%(titleCache, url, idCache))
-        else:
-          self.fXML.write('<post>%s | http://www.geocaching.com/profile/?guid=%s |'%(titleCache, idCache))
-        self.fXML.write('%s | http://www.geocaching.com/%s/log.aspx?LUID=%s</post>\n'%(typeLog, urlLog, idLog))
+        self.fXML.write('<post>%s | http://www.geocaching.com/%s?guid=%s |'%(titleCache, Logbook.urls[natureLog], idCache))
+        self.fXML.write('%s | http://www.geocaching.com/%s/log.aspx?LUID=%s</post>\n'%(typeLog, Logbook.urlsLogs[natureLog], idLog))
 
         self.fXML.write('<text>%s</text>\n'%textLog)
 
@@ -175,8 +175,9 @@ class Logbook(object):
         idLog = None
         with codecs.open(self.fNameInput, 'r', 'utf-8') as fIn:
             cacheData = fIn.read()
+
         natureLog = re.search('<body([^>]*)', cacheData).group(1)
-        natureLog = 'C' if re.search('CacheDetail',natureLog) else 'L'
+        natureLog = 'C' if re.search('CacheDetail',natureLog) else 'L' # T detected later
         if natureLog == 'C':
             tagTable = re.search('<table id="cache_logs_table"[^>]*>(.*)</table>', cacheData, re.S|re.M).group(1)
         else:
@@ -188,6 +189,7 @@ class Logbook(object):
             listTd = [result.group(1) for result in td]
             imagesList = []
             if natureLog == 'C':
+                # TODO : detect images
                 if  len(listTd) == 0:
                     break
                 divs = re.search('href="([^"]*")[^>]*>([^<]+)</a>.*title="(.+)" alt.*LogDate">(.+)</span>.*LogText">(.*)</div>.*href="([^"]+")',listTd[0], re.S)
