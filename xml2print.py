@@ -205,8 +205,10 @@ htmlEnd="""
 </div>
 <!-- End Popup layer -->
 <!-- Console Layer -->
-<div id="selectionLayer">
+<div id="selectionLayer" style="visibility:hidden;">
+  <p></p>
   <button onclick="downloadSelection();">Save</button>
+  <p></p>
   <div id="selectionBody"></div>
 </div>
 <!-- End Console layer -->
