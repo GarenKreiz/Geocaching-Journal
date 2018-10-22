@@ -79,6 +79,13 @@ h2.date-header {
     font: 20px Arial,Tahoma,Helvetica,FreeSans,sans-serif;
     margin: 4px 0px 20px 0px;
 }
+
+.post-icon {
+	padding-right: 6px;
+	width: 26px;
+	vertical-align: text-bottom;
+}
+
 .post-banner {
     margin: 14px 18px 0px;
     padding: 8px;
