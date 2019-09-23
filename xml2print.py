@@ -194,7 +194,7 @@ htmlEnd="""
         <div id="popupTitle"> TITRE </div>
     </div>
     <div id="popupContent">
-      <img id="p<opupImage" src="">
+      <img id="popupImage" src="">
     </div>
     <div id="popupButtons">
       <input type="button" id="showLog"   value="Log"   onclick="window.open('', '_blank');"  >
