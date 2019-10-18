@@ -149,11 +149,13 @@ h2.date-header {
 }
 #popupLayer {
     position:fixed;
-    top: 50px;
-    left: 50px;
+    top: 10px;
+    left: 10px;
     visibility:hidden;
     border:solid 1px #000000;
     background-color:#FF9933;
+	max-height: 95vh;
+	max-width: 95vw;
 }
 #popupWindow {
     display: table;
@@ -179,10 +181,13 @@ h2.date-header {
     display: table-row;
 }
 #popupImage {
-    max-width: 1200px;
-    max-height: 1000px;
+    max-width: 95vw;
+    max-height: 95vh;
 }
 #popupButtons {
+    position:fixed;
+    top: 30px;
+    left: 10px;
     display: table-row;
     visibility:hidden;
 }
