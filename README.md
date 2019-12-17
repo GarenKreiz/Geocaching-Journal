@@ -10,6 +10,7 @@ Generation of a journal of geocaching logs
 * customization of HTML output with CSS styles or inside the scripts
 * identification of logs without pictures
 * generate additionnal list of selected pictures
+* authentication to website to download logs
 * requires no external modules
 
 These scripts were tested on Python 2.7.
@@ -26,10 +27,11 @@ These scripts were tested on Python 2.7.
 * Save locally the content of the web page https://www.geocaching.com/my/logs.aspx?s=1 , for example in file **geocaching_logs.html**. Save it as a plain HTML file.
 * Run the [processLogs.py](processLogs.py) script to generate an XML file for example **logbook.xml**.
 * It create a directory Logs to save the logs' HTML page before parsing them.
+* Authentication to the geocaching website is necessary to download logs (first use of processLogs, new logs or -r option)
 * Warning: the script may generate lots of accesses to www.geocaching.com without timeout. Check the License Agreement of this web site. It may be safe to run the program to get the log for small periods of time ("-s" and "-e" option)
 
 ```
-$ python processLogs.py geocaching_logs.html logbook.xml
+$ python processLogs.py -u user/password geocaching_logs.html logbook.xml
 ```
 
 * Check the content of the file : the title and description can be directly edited in the file [logbook_header.xml](logbook_header.xml) 
@@ -72,7 +74,7 @@ or
 * When the text of a log entry is change online or when pictures are added to a log, use the "--refresh" option to force the update of the cache of the log web pages. For example, for the logs on day AAAA/MM/DD, do
 
 ```
-$ python processLogs.py -s AAAA/MM/DD -e AAAA/MM/DD -r geocaching_logs.html logbook.html
+$ python processLogs.py -u user/password -s AAAA/MM/DD -e AAAA/MM/DD -r geocaching_logs.html logbook.html
 ```
 
 ## Generated web page
@@ -139,10 +141,11 @@ Ces scripts ont été testés avec Python 2.7
 * Faire une sauvegarde locale de la page contenant tous vos logs https://www.geocaching.com/my/logs.aspx?s=1 , par exemple dans le fichier **geocaching_logs.html**. Le format de la sauvegarde doit être de l'HTML simple.
 * Lancer le script [processLogs.py](processLogs.py) pour générer un fichier XML **logbook.xml**
 * Cela crée un répertoire **Logs** contenant un cache local des descriptions HTML des notes
+* La connexion au site Geocaching est nécessaire pour télécharger les notes (lancement initial, nouvelles notes ou option -r)
 * Note: le script engrendre une rafale de requêtes vers www.geocaching.com sans temporisation. Vérifiez les clauses d'utilisation de ce site web. Il est recommandé de ne récupérer à chaque fois que les logs pour une courte période (options "-s" et "-e")
 
 ```
-$ python processLogs.py geocaching_logs.html logbook.xml
+$ python processLogs.py -u user/password geocaching_logs.html logbook.xml
 ```
 
 * Vérifier le contenu du fichier : le titre et la description du journal peuvent être modifiés dans le fichier [logbook_header.xml](logbook_header.xml)
@@ -186,7 +189,7 @@ ou
 * Si le texte d'une entrée du journal a été modifié ou si des photos ont été ajoutées, il faut utiliser l'option "--refresh" pour forcer la mise à jour du cache local des pages web des logs. Par exemple, pour la journée AAAA/MM/JJ, faire
 
 ```
-$ python processLogs.py -s AAAA/MM/JJ -e AAAA/MM/JJ -r geocaching_logs.html logbook.html
+$ python processLogs.py -u user/password -s AAAA/MM/JJ -e AAAA/MM/JJ -r geocaching_logs.html logbook.html
 ```
 
 ## Page web générée

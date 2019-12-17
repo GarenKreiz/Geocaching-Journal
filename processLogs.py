@@ -34,7 +34,9 @@ import sys
 import time
 import codecs
 import locale
+import urllib
 import urllib2
+import cookielib
 
 #os.environ['LC_ALL'] = 'fr_FR.UTF-8'
 #locale.setlocale(locale.LC_ALL, 'fr_FR.UTF-8')
@@ -57,7 +59,8 @@ class Logbook(object):
 
     def __init__(self,
                  fNameInput, fNameOutput="logbook.xml",
-                 verbose=True, startDate=None, endDate=None, refresh=False, excluded=[]):
+                 verbose=True, startDate=None, endDate=None, refresh=False, excluded=[],
+                 user = None, password = None):
         self.fNameInput = fNameInput
         self.fNameOutput = fNameOutput
         self.fXML = codecs.open(fNameOutput, "w", 'utf-8')
@@ -70,6 +73,51 @@ class Logbook(object):
         self.nDates = 0          # number of processed dates
         self.nLogs = 0           # number of processed logs
 
+        self.urlOpener = None
+
+        self.user = user
+        self.password = password
+        print "User: ", user
+        
+    def login(self):
+
+        if self.urlOpener:
+            return
+
+        cookieJar = cookielib.CookieJar()
+        self.urlOpener = urllib2.build_opener(
+            urllib2.HTTPRedirectHandler(),
+            urllib2.HTTPHandler(debuglevel = 0),
+            urllib2.HTTPSHandler(debuglevel = 0),
+            urllib2.HTTPCookieProcessor(cookieJar)
+            )
+
+        self.urlOpener.addheaders = [
+            ('User-agent', ('Mozilla/4.0 (compatible; MSIE 6.0; '
+                            'Windows NT 5.2; .NET CLR 1.1.4322)'))
+            ]
+        
+        response = self.urlOpener.open('https://www.geocaching.com/account/signin')
+        data = response.read().decode('utf8')
+        f = codecs.open("geocaching_signin.html", "w", "utf-8")
+        f.write(data)
+        f.close()
+
+        requestVerificationToken = re.search('"__RequestVerificationToken" type="hidden" value="([^"]*)"',data,re.S).group(1)
+
+        form = { '__RequestVerificationToken' : requestVerificationToken,
+                 'ReturnUrl' : 'https://www.geocaching.com/my/default.aspx',
+                 'UsernameOrEmail' : self.user,
+                 'Password' : self.password }
+
+        login_data = urllib.urlencode(form)
+
+        r2 = self.urlOpener.open('https://www.geocaching.com/account/signin', login_data)
+        
+        f = codecs.open("geocaching_login.html", "w", "utf-8")
+        f.write(r2.read().decode('utf-8'))
+        f.close()
+        
 
     def getLog(self, dateLog, idLog, idCache, titleCache, typeLog, natureLog):
         
@@ -78,10 +126,13 @@ class Logbook(object):
             if not os.path.isdir(dirLog):
                 print "Creating directory "+dirLog
                 os.makedirs(dirLog)
-            url = 'http://www.geocaching.com/'+Logbook.urlsLogs[natureLog]+'/log.aspx?LUID='+idLog
+            url = 'https://www.geocaching.com/'+Logbook.urlsLogs[natureLog]+'/log.aspx?LUID='+idLog
             print "Fetching log", url
             try:
-                dataLog = urllib2.urlopen(url).read().decode('utf-8')
+                # dataLog = urllib2.urlopen(url).read().decode('utf-8')
+                self.login()
+                response = self.urlOpener.open(url)
+                dataLog = response.read().decode('utf-8')
                 print "Saving log file "+idLog
                 with codecs.open(dirLog+idLog, 'w', 'utf-8') as fw:
                     fw.write(dataLog)
@@ -97,7 +148,7 @@ class Logbook(object):
 						print "Processing cache %r"%titleCache
                 dataLog = fr.read()
         return self.parseLog(dataLog, dateLog, idLog, idCache, titleCache, typeLog, natureLog)
-
+    
 
     def parseLog(self, dataLog, dateLog, idLog, idCache, titleCache, typeLog, natureLog):
         """
@@ -416,16 +467,16 @@ if __name__ == '__main__':
         print '   -r|--refresh'
         print '       refresh local cache of logs (to use when the log was changed or pictures were added)'
         print '       rafraichit la version locale des journaux (a utiiser si des modifications ont ete faites ou des photos ont ete ajoutees'
-        print '   -x|--exclude'
-        print '       exclude a given log type, can be repeated (for example "-x update -x disable")'
-        print '       exclusion de certains types de log, par recherche de chaine de caractere (par exemple "-x update -x disable")'
+        print '   -u|--user user/password'
+        print '       authenticate to www.geocaching.com to access the log pages'
+        print '       authentification sur le site geocaching pour pouvoir consulter les logs'
 
         sys.exit()
 
     import getopt
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "hcrqs:e:x:", ['help', 'cache', 'refresh', 'quiet', 'start', 'end', 'exclude'])
+        opts, args = getopt.getopt(sys.argv[1:], "hcrqs:e:x:u:", ['help', 'cache', 'refresh', 'quiet', 'start', 'end', 'exclude', 'user'])
     except getopt.GetoptError:
         usage()
 
@@ -434,7 +485,9 @@ if __name__ == '__main__':
     endDate = None
     refresh = False
     excluded = []
-
+    user = None
+    password = None
+    
     for opt, arg in opts:
         if opt == '-h':
             usage()
@@ -456,6 +509,14 @@ if __name__ == '__main__':
             endDate = arg
         elif opt == "-x":
             excluded.append(arg)
+        elif opt == "-u":
+            credentials = arg.split('/')
+            if len(credentials) <> 2:
+                print "!!! Bad credentials: use user/password"
+                print "!!! Mauvais format : utiliser utilisateur/mot_de_passe"
+                sys.exit(1)
+            user = credentials[0]
+            password = credentials[1]
 
     print "Excluded:", excluded
 
@@ -469,7 +530,7 @@ if __name__ == '__main__':
 
         # firt phase : from Groundspeak HTML to XML
         if re.search(".htm[l]*", args[0], re.IGNORECASE):
-            Logbook(args[0], xmlFile, verbose, startDate, endDate, refresh, excluded).processLogs()
+            Logbook(args[0], xmlFile, verbose, startDate, endDate, refresh, excluded, user, password).processLogs()
 
         # second phase : from XML to generated HTML
         if re.search(".htm[l]*", args[1], re.IGNORECASE):
