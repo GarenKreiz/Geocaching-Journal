@@ -1,5 +1,6 @@
 #! python
 # -*- coding: utf-8 -*-
+
 """
 ################################################################################
 #
@@ -31,9 +32,9 @@ import re
 import os
 import sys
 import time
+import codecs
 import locale
 import urllib2
-import codecs
 
 #os.environ['LC_ALL'] = 'fr_FR.UTF-8'
 #locale.setlocale(locale.LC_ALL, 'fr_FR.UTF-8')
@@ -53,7 +54,7 @@ class Logbook(object):
     urlsLogs = { 'C': 'seek', 'L': 'seek', 'T': 'track'}
     # urls for cacherss, caches and trackable
     urls = { 'C': 'profile', 'L': 'seek/cache_details.aspx', 'T': 'track/details.aspx'}
-    
+
     def __init__(self,
                  fNameInput, fNameOutput="logbook.xml",
                  verbose=True, startDate=None, endDate=None, refresh=False, excluded=[]):
@@ -68,6 +69,7 @@ class Logbook(object):
 
         self.nDates = 0          # number of processed dates
         self.nLogs = 0           # number of processed logs
+
 
     def getLog(self, dateLog, idLog, idCache, titleCache, typeLog, natureLog):
         
@@ -89,10 +91,13 @@ class Logbook(object):
         else:
             with codecs.open(dirLog+idLog, 'r', 'utf-8') as fr:
                 if self.verbose:
-                    print "Processing cache " + titleCache
+					try:
+						print "Processing cache " + titleCache
+					except:
+						print "Processing cache %r"%titleCache
                 dataLog = fr.read()
         return self.parseLog(dataLog, dateLog, idLog, idCache, titleCache, typeLog, natureLog)
-    
+
 
     def parseLog(self, dataLog, dateLog, idLog, idCache, titleCache, typeLog, natureLog):
         """
@@ -165,7 +170,6 @@ class Logbook(object):
             with codecs.open('logbook_header.xml', 'r', 'utf-8') as f:
                 self.fXML.write(f.read())
         except:
-
             self.fXML.write('<title>' + bookTitle + '</title>\n')
             self.fXML.write('<description>' + bookDescription + '</description>\n')
 
@@ -176,6 +180,7 @@ class Logbook(object):
         with codecs.open(self.fNameInput, 'r', 'utf-8') as fIn:
             cacheData = fIn.read()
 
+        # natureLog : C for caches, L for logs, T for trackables
         natureLog = re.search('<body([^>]*)', cacheData).group(1)
         natureLog = 'C' if re.search('CacheDetail',natureLog) else 'L' # T detected later
         if natureLog == 'C':
@@ -196,6 +201,7 @@ class Logbook(object):
                 textLog = divs.group(5)
                 dateLog = self.__normalizeDate(divs.group(4))
                 typeLog = divs.group(3)
+                typeCache = ''
                 idCache = re.search('guid=(.*?)"', divs.group(1)).group(1)
                 idLog = re.search('LUID=(.*?)"',divs.group(6)).group(1)
                 titleCache =  divs.group(2)
@@ -203,12 +209,16 @@ class Logbook(object):
                 textLog = None
                 dateLog = self.__normalizeDate(listTd[2].strip())
                 typeLog = re.search('title="(.*)".*>', listTd[0]).group(1)
+                if re.search('Favorited',listTd[1]):
+                    typeLog = typeLog + ' [favorite]'
                 idCache = re.search('guid=(.*?)"', listTd[3]).group(1)
+                typeCache = re.search('title="([^"]*)"', listTd[3]).group(1)
                 idLog = re.search('LUID=(.*?)"', listTd[5]).group(1)
                 titleCache = re.search('</a> <a(.*)?\">(.*)</a>', listTd[3]).group(2).replace('</span>', '')
                 natureLog = ('L' if listTd[3].find('cache_details') > 1 else 'T') # C for Cache and T for trackable
             allLogs += 1
- 
+            if (typeCache):
+                typeLog += ' [%s]'%typeCache
             # keeping the logs that are not excluded by -x option
             #keep = (True if typeLog.lower() in [item.lower() for item in self.excluded] else False)
             #test short string research exclude - ex : -x Write for Write note or -x Found for Found it - etc.
@@ -219,7 +229,10 @@ class Logbook(object):
                 except KeyError:
                     days[dateLog] = [(idLog, idCache, titleCache, typeLog, natureLog, textLog, imagesList)]
                 if self.verbose:
-                    print "%s|%s|%s|%s|%s|%s"%(idLog, dateLog, idCache, titleCache, typeLog, natureLog)
+					try:
+						print "%s|%s|%s|%s|%s|%s"%(idLog, dateLog, idCache, titleCache, typeLog, natureLog)
+					except:
+						print "%s|%s|%s|%r|%s|%s"%(idLog, dateLog, idCache, titleCache, typeLog, natureLog)
         dates = days.keys()
         dates.sort()
         for dateLog in dates:
