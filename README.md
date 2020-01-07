@@ -20,6 +20,9 @@ These scripts were tested on Python 2.7.
 * Make sure Python is available on you machine
 * Use Git to get the source or extract an [archive](https://github.com/GarenKreiz/Geocaching-Journal/archive/master.zip)
 * On Windows, one may extract a binary version of the program from a ZIP archive associated to the [latest release](https://github.com/GarenKreiz/Geocaching-Journal/releases/latest)
+* To allow icons support in the logbook, download the following SVG files owned by Groundspeak in your working directory
+  * http://www.geocaching.com/app/ui-icons/sprites/cache-types.svg
+  * http://www.geocaching.com/images/icons/fave_fill_16.svg
 
 ## Usage
 
@@ -134,6 +137,9 @@ Ces scripts ont été testés avec Python 2.7
 * Vérifier que Python est bien installé sur votre machine
 * Utiliser Git pour récupérer les sources ou  extraire une [archive](https://github.com/GarenKreiz/Geocaching-Journal/archive/master.zip)
 * Sur Windows, il est possible d'utiliser une version binaire du programme en utilisant l'archive ZIP de la [dernière distribution](https://github.com/GarenKreiz/Geocaching-Journal/releases/latest)
+* Pour avoir des icones dans le journal, télécharger les fichiers SVG suivants dans votre répertoire de travail :
+  * http://www.geocaching.com/app/ui-icons/sprites/cache-types.svg
+  * http://www.geocaching.com/images/icons/fave_fill_16.svg
 
 ## Utilisation
 

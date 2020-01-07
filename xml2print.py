@@ -75,6 +75,13 @@ pictureFormatTemplate = """
 </tbody></table>
 """
 
+# file from http://www.geocaching.com/app/ui-icons/sprites/cache-types.svg (Copyright Groundspeak)
+iconBadgeTemplate = '<svg class="post-badge"><use xlink:href="./cache-types.svg#icon-%s" /></svg>'
+iconPostTemplate = '<svg class="post-icon"><use xlink:href="./cache-types.svg#icon-%d" /></svg>'
+
+# file from http://www.geocaching.com/images/icons/fave_fill_16.svg (Copyright Groundspeak)
+iconFavoriteTemplate = '<svg width="16px" height="16px"><image xlink:href="./fave_fill_16.svg" /></svg>'
+
 headerMosaic = """
 <style>
 .thumb {
@@ -315,12 +322,42 @@ def flushText(fOut,text):
             text = '<p>'+text+'</p>'
         fOut.write(text)
 
+typeIcons = {
+    'Traditional Cache' : 2,
+    'Multi-cache'       : 3,
+    'Virtual Cache'     : 4,
+    'Letterbox Hybrid'  : 5,
+    'Event Cache'       : 6,
+    'Mystery Cache'     : 8,
+    'Unknown Cache'     : 8,
+    'Project APE Cache' : 9,
+    'Webcam Cache'      : 11,
+    'Locationless (Reverse) Cache' : 12,
+    'Cache In Trash Out Event' : 13,
+    'Earthcache'        : 137,
+    'Mega-Event'        : 453,
+    'Wherigo Cache' : 1858,
+    'Community Celebration Event' : 3653,
+    'Geocaching HQ' : 3773,
+    'Giga-Event'    : 7005,
 
-def xml2print(xmlInput, htmlOutput, printing=False, groupPanoramas=False, compactGallery=False, mosaic=None):
+    'Found it' : 'found',
+    'Didn\'t find it' : 'dnf',
+    'Write note' : 'cachenote',
+    'Will Attend' : 'cachenote-disable',
+    'Attended' : 'found',
+    'Temporarily Disable Listing' : 'draft-disabled',
+    'Owner Maintenance' : 'owned',
+    'Enable Listing' : 'generic',
+    }
+
+def xml2print(xmlInput, htmlOutput, printing=False, groupPanoramas=False, compactGallery=False, mosaic=None, icons=False):
     """
     main function of module : generation of an HTML file from an XML file
     """
 
+    global typeIcons
+    
     fOut = open(htmlOutput, 'w')
     firstDate = True
     pictures = []
@@ -421,20 +458,34 @@ def xml2print(xmlInput, htmlOutput, printing=False, groupPanoramas=False, compac
 
             # <post>left title|left url|right title|right url</post>
             elements = post.split('|')
+            post = elements[0].strip()
             if len(elements) > 1:
-                post = '<a href="' + elements[1] + '" target="_blank">' + elements[0].strip() + '</a>'
                 currentLocation = elements[0].strip()
                 currentURL = elements[1]
                 currentAdditionalURL = ''
+                post = '<a href="' + elements[1] + '" target="_blank">' + post + '</a>'
+                log = ''
                 if len(elements) > 2:
-                    post = '<div class="alignleft">' + post + '</div>'
                     log = elements[2].strip()
+                    if 'geocaching' in currentURL:
+                        favorite = ''
+                        typeCache = re.search('\[([^\[]*)\]$', log).group(1)
+                        typeLog = re.search('([^\[]*) +\[', log).group(1)
+                        if icons and typeLog and typeLog in typeIcons.keys():
+                            post = iconBadgeTemplate%typeIcons[typeLog] + post
+                            if 'favorite' in log:
+                                favorite = iconFavoriteTemplate
+                            log = typeLog
+                        if icons and typeCache and typeCache in typeIcons.keys():
+                            post = iconPostTemplate%typeIcons[typeCache] + post
+                        log = favorite + log
+                    post = '<div class="alignleft">' + post + '</div>'
                     if len(elements) > 3:
                         log = '<a href="' + elements[3] + '" target="_blank">' + log + '</a>'
                         currentAdditionalURL = elements[3]
-                    post = post + '<div class="alignright">' + log + '</div>'
+                    log = '<div class="alignright">' + log + '</div>'
+                post = '<a href="' + elements[1] + '" target="_blank">' + post + '</a>' + log
             else:
-                post = elements[0].strip()
                 currentLocation = post
                 currentURL = ''
                 currentAdditionalURL = ''
@@ -506,7 +557,7 @@ if __name__ == "__main__":
 
     import getopt
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "hpgcm:", ['help', 'printing', 'groupPanoramas','compactGallery','mosaic'])
+        opts, args = getopt.getopt(sys.argv[1:], "hipgcm:", ['help', 'icons', 'printing', 'groupPanoramas','compactGallery','mosaic'])
     except getopt.GetoptError:
         usage()
 
@@ -514,6 +565,7 @@ if __name__ == "__main__":
     groupPanoramas = False
     compactGallery = False
     mosaic = None
+    icons = False
     for opt, arg in opts:
         if opt == '-h':
             usage()
@@ -525,10 +577,12 @@ if __name__ == "__main__":
             compactGallery = True
         elif opt == "-m":
             mosaic = arg
+        elif opt == "-i":
+            icons = True
 
     if len(args) == 2:
         try:
-            xml2print(args[0], args[1], printing, groupPanoramas, compactGallery, mosaic)
+            xml2print(args[0], args[1], printing, groupPanoramas, compactGallery, mosaic, icons)
         except Exception, msg:
             print "Problem:",msg
         print "That's all, folks!"

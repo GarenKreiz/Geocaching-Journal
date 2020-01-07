@@ -273,7 +273,7 @@ class Logbook(object):
             # keeping the logs that are not excluded by -x option
             #keep = (True if typeLog.lower() in [item.lower() for item in self.excluded] else False)
             #test short string research exclude - ex : -x Write for Write note or -x Found for Found it - etc.
-            keepLog = (False if len([excluded for excluded in self.excluded if excluded.lower() in typeLog.lower()]) else True)
+            keepLog = (False if len([excluded for excluded in self.excluded if excluded in typeLog]) else True)
             if keepLog and idLog <> '':
                 try:
                     days[dateLog].append((idLog, idCache, titleCache, typeLog, natureLog, textLog, imagesList))
@@ -307,6 +307,7 @@ class Logbook(object):
                     (cacheTitle, textLog, imagesList) = self.getLog(dateLog, idLog, idCache, titleCache, typeLog, natureLog)
                 self.outputLog(dateLog, idLog, idCache, titleCache, typeLog, natureLog, textLog, imagesList)
 
+        self.fXML.write('<date>Icons : Groundspeak (Copyright)</date>\n')
         self.fXML.write('<date>Source : GarenKreiz/Geocaching-Journal @ GitHub (CC BY-NC 3.0 FR)</date>\n')
         self.fXML.close()
         print 'Logs: ', self.nLogs, '/', allLogs, 'Days:', self.nDates, '/', len(dates)
@@ -535,7 +536,7 @@ if __name__ == '__main__':
         # second phase : from XML to generated HTML
         if re.search(".htm[l]*", args[1], re.IGNORECASE):
             import xml2print
-            xml2print.xml2print(xmlFile, args[1], printing=False, groupPanoramas=True, compactGallery=True)
+            xml2print.xml2print(xmlFile, args[1], printing=False, groupPanoramas=True, compactGallery=True, icons=True)
         print "That's all folks!"
     else:
         usage()
