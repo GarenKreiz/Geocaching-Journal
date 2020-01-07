@@ -344,11 +344,12 @@ typeIcons = {
     'Found it' : 'found',
     'Didn\'t find it' : 'dnf',
     'Write note' : 'cachenote',
-    'Will Attend' : 'cachenote-disable',
+    'Will Attend' : 'found-disabled',
     'Attended' : 'found',
     'Temporarily Disable Listing' : 'draft-disabled',
     'Owner Maintenance' : 'owned',
     'Enable Listing' : 'generic',
+    'Webcam Photo Taken' : 'found',
     }
 
 def xml2print(xmlInput, htmlOutput, printing=False, groupPanoramas=False, compactGallery=False, mosaic=None, icons=False):
