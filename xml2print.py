@@ -253,6 +253,8 @@ def cleanText(textInput, allTags=True):
     resu = re.sub('<div[^>]*>'                     , '',  resu)
     resu = re.sub('[\n\r]*'                        , '',  resu)
     resu = re.sub('  *'                            , ' ', resu)
+    # geocaching emoticons
+    resu = re.sub('img src="/images/icons','img src="https://www.geocaching.com/images/icons', resu)
     if allTags:
         resu = re.sub('<[^>]*>', '', resu)
     return resu
@@ -470,8 +472,9 @@ def xml2print(xmlInput, htmlOutput, printing=False, groupPanoramas=False, compac
                     log = elements[2].strip()
                     if 'geocaching' in currentURL:
                         favorite = ''
-                        typeCache = re.search('\[([^\[]*)\]$', log).group(1)
-                        typeLog = re.search('([^\[]*) +\[', log).group(1)
+                        types = re.search('([^\[]*)(\[[^\[]*\])?$', log)
+                        typeCache = re.sub('[\[\]]','',types.group(2)) if types.group(2) else ''
+                        typeLog = types.group(1).strip()
                         if icons and typeLog and typeLog in typeIcons.keys():
                             post = iconBadgeTemplate%typeIcons[typeLog] + post
                             if 'favorite' in log:
