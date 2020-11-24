@@ -142,10 +142,10 @@ class Logbook(object):
         else:
             with codecs.open(dirLog+idLog, 'r', 'utf-8') as fr:
                 if self.verbose:
-					try:
-						print "Processing cache " + titleCache
-					except:
-						print "Processing cache %r"%titleCache
+                    try:
+                        print "Processing cache " + titleCache
+                    except:
+                        print "Processing cache %r"%titleCache
                 dataLog = fr.read()
         return self.parseLog(dataLog, dateLog, idLog, idCache, titleCache, typeLog, natureLog)
     
@@ -280,10 +280,10 @@ class Logbook(object):
                 except KeyError:
                     days[dateLog] = [(idLog, idCache, titleCache, typeLog, natureLog, textLog, imagesList)]
                 if self.verbose:
-					try:
-						print "%s|%s|%s|%s|%s|%s"%(idLog, dateLog, idCache, titleCache, typeLog, natureLog)
-					except:
-						print "%s|%s|%s|%r|%s|%s"%(idLog, dateLog, idCache, titleCache, typeLog, natureLog)
+                    try:
+                        print "%s|%s|%s|%s|%s|%s"%(idLog, dateLog, idCache, titleCache, typeLog, natureLog)
+                    except:
+                        print "%s|%s|%s|%r|%s|%s"%(idLog, dateLog, idCache, titleCache, typeLog, natureLog)
         dates = days.keys()
         dates.sort()
         for dateLog in dates:
