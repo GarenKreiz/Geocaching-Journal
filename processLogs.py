@@ -33,14 +33,17 @@ import os
 import sys
 import time
 import codecs
-import locale
 import urllib
-import urllib2
-import cookielib
-
-#os.environ['LC_ALL'] = 'fr_FR.UTF-8'
-#locale.setlocale(locale.LC_ALL, 'fr_FR.UTF-8')
-locale.setlocale(locale.LC_ALL, '')
+try:
+    import urllib2 as Request
+    from cookielib import CookieJar
+    Parse = urllib
+    version = 2
+except:
+    import urllib.request as Request
+    from http.cookiejar import CookieJar
+    Parse = urllib.parse
+    version = 3
 
 # default title and description of the logbook (should be in logbook_header.xml)
 bookTitle = u"""<title>Titre à parametrer<br/> Customizable title</title>"""
@@ -77,19 +80,19 @@ class Logbook(object):
 
         self.user = user
         self.password = password
-        print "User: ", user
+        print("User: ", user)
         
     def login(self):
 
         if self.urlOpener:
             return
 
-        cookieJar = cookielib.CookieJar()
-        self.urlOpener = urllib2.build_opener(
-            urllib2.HTTPRedirectHandler(),
-            urllib2.HTTPHandler(debuglevel = 0),
-            urllib2.HTTPSHandler(debuglevel = 0),
-            urllib2.HTTPCookieProcessor(cookieJar)
+        cookieJar = CookieJar()
+        self.urlOpener = Request.build_opener(
+            Request.HTTPRedirectHandler(),
+            Request.HTTPHandler(debuglevel = 0),
+            Request.HTTPSHandler(debuglevel = 0),
+            Request.HTTPCookieProcessor(cookieJar)
             )
 
         self.urlOpener.addheaders = [
@@ -110,7 +113,7 @@ class Logbook(object):
                  'UsernameOrEmail' : self.user,
                  'Password' : self.password }
 
-        login_data = urllib.urlencode(form)
+        login_data = Parse.urlencode(form).encode('utf-8')
 
         r2 = self.urlOpener.open('https://www.geocaching.com/account/signin', login_data)
         
@@ -124,28 +127,28 @@ class Logbook(object):
         dirLog = Logbook.dirLog[natureLog] + '/_%s_/'%idLog[0]
         if not os.path.isfile(dirLog+idLog) or self.refresh:
             if not os.path.isdir(dirLog):
-                print "Creating directory "+dirLog
+                print("Creating directory "+dirLog)
                 os.makedirs(dirLog)
             url = 'https://www.geocaching.com/'+Logbook.urlsLogs[natureLog]+'/log.aspx?LUID='+idLog
-            print "Fetching log", url
+            print("Fetching log", url)
             try:
-                # dataLog = urllib2.urlopen(url).read().decode('utf-8')
+                # dataLog = urllib.request.urlopen(url).read().decode('utf-8')
                 self.login()
                 response = self.urlOpener.open(url)
                 dataLog = response.read().decode('utf-8')
-                print "Saving log file "+idLog
+                print("Saving log file "+idLog)
                 with codecs.open(dirLog+idLog, 'w', 'utf-8') as fw:
                     fw.write(dataLog)
-            except (urllib2.HTTPError, urllib2.URLError), msg:
-                print "Error accessing log "+idLog, msg
+            except (Request.HTTPError, Request.URLError) as msg:
+                print("Error accessing log "+idLog, msg)
                 return
         else:
             with codecs.open(dirLog+idLog, 'r', 'utf-8') as fr:
                 if self.verbose:
                     try:
-                        print "Processing cache " + titleCache
+                        print("Processing cache " + titleCache)
                     except:
-                        print "Processing cache %r"%titleCache
+                        print("Processing cache %r"%titleCache)
                 dataLog = fr.read()
         return self.parseLog(dataLog, dateLog, idLog, idCache, titleCache, typeLog, natureLog)
     
@@ -167,7 +170,7 @@ class Logbook(object):
             text = re.search('_LogText">(.*?)</span>', dataLog, re.S).group(1)
             text = re.sub('src="/images/', 'src="http://www.geocaching.com/images/', text)
         else:
-            print "!!!! Log unavailable", idLog
+            print("!!!! Log unavailable", idLog)
 
         if 'LogBookPanel1_GalleryList' in dataLog: #if Additional images
             tagTable = re.search('<table id="ctl00_ContentBody_LogBookPanel1_GalleryList(.*?)</table>',dataLog, re.S).group(0)
@@ -183,7 +186,10 @@ class Logbook(object):
             panora = self.__isPanorama(urlTitle.group(4))
             listeImages.append((urlTitle.group(2), urlTitle.group(4), panora))
         else:
-            print u'!!!! Log without image', idLog, dateLog, u'%r'%titleCache,'>>>',typeLog
+            try:
+                print('!!!! Log withaout image %s %s %s >>> %s'%(idLog, dateLog, titleCache, typeLog))
+            except:
+                print(('!!!! Log without image %s %s %s >>> %s'%(idLog, dateLog, titleCache, typeLog)).encode('utf-8'))
 
         return (titleCache,text,listeImages)
 
@@ -283,18 +289,17 @@ class Logbook(object):
             #keep = (True if typeLog.lower() in [item.lower() for item in self.excluded] else False)
             #test short string research exclude - ex : -x Write for Write note or -x Found for Found it - etc.
             keepLog = (False if len([excluded for excluded in self.excluded if excluded.lower() in typeLog.lower()]) else True)
-            if keepLog and idLog <> '':
+            if keepLog and idLog != '':
                 try:
                     days[dateLog].append((idLog, idCache, titleCache, typeLog, natureLog, textLog, imagesList))
                 except KeyError:
                     days[dateLog] = [(idLog, idCache, titleCache, typeLog, natureLog, textLog, imagesList)]
                 if self.verbose:
                     try:
-                        print "%s|%s|%s|%s|%s|%s"%(idLog, dateLog, idCache, titleCache, typeLog, natureLog)
+                        print("%s|%s|%s|%s|%s|%s"%(idLog, dateLog, idCache, titleCache, typeLog, natureLog))
                     except:
-                        print "%s|%s|%s|%r|%s|%s"%(idLog, dateLog, idCache, titleCache, typeLog, natureLog)
-        dates = days.keys()
-        dates.sort()
+                        print("%s|%s|%s|%r|%s|%s"%(idLog, dateLog, idCache, titleCache, typeLog, natureLog))
+        dates = sorted(days)
         for dateLog in dates:
             # check if date is in the correct interval
             if self.startDate and dateLog < self.startDate:
@@ -317,8 +322,8 @@ class Logbook(object):
         self.fXML.write('<date>Icons : Groundspeak (Copyright)</date>\n')
         self.fXML.write('<date>Source : GarenKreiz/Geocaching-Journal @ GitHub (CC BY-NC 3.0 FR)</date>\n')
         self.fXML.close()
-        print 'Logs: ', self.nLogs, '/', allLogs, 'Days:', self.nDates, '/', len(dates)
-        print 'Result file:', self.fNameOutput
+        print('Logs: ', self.nLogs, '/', allLogs, 'Days:', self.nDates, '/', len(dates))
+        print('Result file:', self.fNameOutput)
 
 
     def __formatDate(self, date):
@@ -333,9 +338,8 @@ class Logbook(object):
         except:
             pass
         date = time.strftime('%A %d %B %Y', time.localtime(t))
-        date = date.decode(locale.getpreferredencoding()).encode('utf8')
         date = re.sub(' 0', ' ', date)
-        return date.decode('utf-8')
+        return date
 
     def __normalizeDate(self, date):
         """
@@ -346,7 +350,7 @@ class Logbook(object):
         date = re.sub('/+$', '', date)
         (y, m, d) = date.split('/')
         if int(m) > 12:
-            print "Date format month/day/year not supported. Choose another format in the web site preferences (day/month/year)."
+            print("Date format month/day/year not supported. Choose another format in the web site preferences (day/month/year).")
         if int(d) > 1969:
             # dd.mm.yyyy
             d, y = y, d
@@ -358,34 +362,34 @@ class Logbook(object):
 
 if __name__ == '__main__':
     def usage():
-        print 'Usage: python processLogs.py [-q|--quiet] geocaching_logs.html logbook.xml'
-        print '    or python processLogs.py [-q|--quiet] geocaching_logs.html logbook.html'
-        print ''
-        print '   geocaching_logs.html'
-        print '       dump of the web page containing all you logs (HTML only)'
-        print '       sauvegarde de la page contenant tous vos logs (HTML uniquement)'
-        print '   logbook.xml'
-        print '       content of all log entries with reference to pictures'
-        print '       contenu de tous les logs avec references aux images'
-        print '   logbook.html'
-        print '       web page with all logs and images (using xml2print.py)'
-        print '       page web avec tous les logs et images (utilise xml2print.py)'
-        print ''
-        print '   -q|--quiet'
-        print '       less verbose console output'
-        print '       execution du programme moins verbeuse'
-        print '   -s|--start startDate'
-        print '       start processing log at date startDate (included, format YYYY/MM/DD)'
-        print '       commence le traitement des logs a partir de la date startDate incluse (format AAAA/MM/JJ)'
-        print '   -e|--end endDate'
-        print '       stop processing log after date endDate (format YYYY/MM/DD)'
-        print '       arrete le traitement des logs apres la date endDate (format AAAA/MM/JJ)'
-        print '   -r|--refresh'
-        print '       refresh local cache of logs (to use when the log was changed or pictures were added)'
-        print '       rafraichit la version locale des journaux (a utiiser si des modifications ont ete faites ou des photos ont ete ajoutees'
-        print '   -u|--user user/password'
-        print '       authenticate to www.geocaching.com to access the log pages'
-        print '       authentification sur le site geocaching pour pouvoir consulter les logs'
+        print('Usage: python processLogs.py [-q|--quiet] geocaching_logs.html logbook.xml')
+        print('    or python processLogs.py [-q|--quiet] geocaching_logs.html logbook.html')
+        print('')
+        print('   geocaching_logs.html')
+        print('       dump of the web page containing all you logs (HTML only)')
+        print('       sauvegarde de la page contenant tous vos logs (HTML uniquement)')
+        print('   logbook.xml')
+        print('       content of all log entries with reference to pictures')
+        print('       contenu de tous les logs avec references aux images')
+        print('   logbook.html')
+        print('       web page with all logs and images (using xml2print.py)')
+        print('       page web avec tous les logs et images (utilise xml2print.py)')
+        print('')
+        print('   -q|--quiet')
+        print('       less verbose console output')
+        print('       execution du programme moins verbeuse')
+        print('   -s|--start startDate')
+        print('       start processing log at date startDate (included, format YYYY/MM/DD)')
+        print('       commence le traitement des logs a partir de la date startDate incluse (format AAAA/MM/JJ)')
+        print('   -e|--end endDate')
+        print('       stop processing log after date endDate (format YYYY/MM/DD)')
+        print('       arrete le traitement des logs apres la date endDate (format AAAA/MM/JJ)')
+        print('   -r|--refresh')
+        print('       refresh local cache of logs (to use when the log was changed or pictures were added)')
+        print('       rafraichit la version locale des journaux (a utiiser si des modifications ont ete faites ou des photos ont ete ajoutees')
+        print('   -u|--user user/password')
+        print('       authenticate to www.geocaching.com to access the log pages')
+        print('       authentification sur le site geocaching pour pouvoir consulter les logs')
 
         sys.exit()
 
@@ -412,29 +416,29 @@ if __name__ == '__main__':
         elif opt == "-r":
             refresh = True
         elif opt == "-s":
-            if len(arg.split('/')) <> 3:
-                print "!!! Bad start date format, use YYYY/MM/DD"
-                print "!!! Format de date de debut faux, utiliser AAAA/MM/JJ"
+            if len(arg.split('/')) != 3:
+                print("!!! Bad start date format, use YYYY/MM/DD")
+                print("!!! Format de date de debut faux, utiliser AAAA/MM/JJ")
                 sys.exit(1)
             startDate = arg
         elif opt == "-e":
-            if len(arg.split('/')) <> 3:
-                print "Bad end date format, use YYYY/MM/DD"
-                print "Format de date de fin faux, utiliser AAAA/MM/JJ"
+            if len(arg.split('/')) != 3:
+                print("Bad end date format, use YYYY/MM/DD")
+                print("Format de date de fin faux, utiliser AAAA/MM/JJ")
                 sys.exit(1)
             endDate = arg
         elif opt == "-x":
             excluded.append(arg)
         elif opt == "-u":
             credentials = arg.split('/')
-            if len(credentials) <> 2:
-                print "!!! Bad credentials: use user/password"
-                print "!!! Mauvais format : utiliser utilisateur/mot_de_passe"
+            if len(credentials) != 2:
+                print("!!! Bad credentials: use user/password")
+                print("!!! Mauvais format : utiliser utilisateur/mot_de_passe")
                 sys.exit(1)
             user = credentials[0]
             password = credentials[1]
 
-    print "Excluded:", excluded
+    print("Excluded:", excluded)
 
     if len(args) == 2:
         if re.search(".xml", args[0], re.IGNORECASE):
@@ -452,6 +456,6 @@ if __name__ == '__main__':
         if re.search(".htm[l]*", args[1], re.IGNORECASE):
             import xml2print
             xml2print.xml2print(xmlFile, args[1], printing=False, groupPanoramas=True, compactGallery=True, icons=True)
-        print "That's all folks!"
+        print("That's all folks!")
     else:
         usage()
