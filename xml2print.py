@@ -31,6 +31,7 @@
 
 import re
 import sys
+import codecs
 import string
 
 maxRow = 3   # number of pictures in a row (less than 4)
@@ -262,7 +263,7 @@ def cleanText(textInput, allTags=True):
 
 def flushGallery(fOut, pictures, groupPanoramas=False, compactGallery=False):
     """
-    print the image gallery of a post, possibly grouping all panoramas at the end
+    print(the image gallery of a post, possibly grouping all panoramas at the end)
     """
 
     if groupPanoramas:
@@ -281,7 +282,7 @@ def flushGallery(fOut, pictures, groupPanoramas=False, compactGallery=False):
 
 def flushSubGallery(fOut, pictures, compactGallery=False):
     """
-    print a sub gallery of images in sequence
+    print(a sub gallery of images in sequence)
     """
 
     if pictures == []:
@@ -361,7 +362,8 @@ def xml2print(xmlInput, htmlOutput, printing=False, groupPanoramas=False, compac
 
     global typeIcons
     
-    fOut = open(htmlOutput, 'w')
+    #fOut = open(htmlOutput, 'w', encoding="utf-8")
+    fOut = codecs.open(htmlOutput, 'w', 'utf-8')
     firstDate = True
     pictures = []
     processingPost = False
@@ -371,16 +373,16 @@ def xml2print(xmlInput, htmlOutput, printing=False, groupPanoramas=False, compac
 
     fOut.write(headerStart)
 
-    print "Processing", xmlInput
-    f = open(xmlInput, 'r')
-
+    print("Processing", xmlInput)
+    # f = open(xmlInput, 'r')
+    f = codecs.open(xmlInput, 'r', 'utf-8')
     currentLocation = ''
     currentURL = ''
     currentAdditionalURL = ''
     
     # process each item of the XML input file
     l = f.readline().strip()
-    while l <> '':
+    while l != '':
         # analyse of the XML tag
         l = l.strip()
         tag = re.sub('>.*', '>', l)
@@ -400,17 +402,17 @@ def xml2print(xmlInput, htmlOutput, printing=False, groupPanoramas=False, compac
             line = re.sub('<[^>]*>', '|', l)
             try:
                 imgDesc = line.split('|')
-            except Exception, msg:
-                print '!!!!!!!!!!!!! Exception: bad image format:', msg, line
+            except Exception as msg:
+                print('!!!!!!!!!!!!! Exception: bad image format:', msg, line)
             if len(imgDesc) == 4:
                 (_, image, comment, _) = imgDesc
             elif len(imgDesc) == 9:
                 (_, image, height, _, width, _, comment, _, _) = imgDesc
             else:
-                print '!!!!!!!!!!!!! Bad image format:', line
+                print('!!!!!!!!!!!!! Bad image format:', line)
             try:
                 allPictures[image].append((comment,currentLocation,currentURL,currentAdditionalURL,elements[0]))
-                print "Image en double :", image, currentLocaltion, currentURL
+                print("Image en double :", image, currentLocaltion, currentURL)
             except:
                 allPictures[image] = [(comment,currentLocation,currentURL,currentAdditionalURL,elements[0])]
             if tag == '<pano>':
@@ -446,8 +448,9 @@ def xml2print(xmlInput, htmlOutput, printing=False, groupPanoramas=False, compac
             processingPost = False
 
             date = cleanText(l)
-            if date <> '':
-                date = string.upper(date[0])+date[1:]
+            if date != '':
+                #date = string.upper(date[0])+date[1:]
+                date.capitalize()
             fOut.write(dateFormat % date)
             text = ''
 
@@ -457,7 +460,10 @@ def xml2print(xmlInput, htmlOutput, printing=False, groupPanoramas=False, compac
                 fOut.write(postEnd + postBanner) # banner between 2 posts
             processingPost = True
             post = cleanText(l)
-            print 'Post:', re.sub('\|.*', '', post)
+            try:
+                print('Post:', re.sub('\|.*', '', post))
+            except:
+                print('Post:', (re.sub('\|.*', '', post)).encode('utf-8'))
 
             # <post>left title|left url|right title|right url</post>
             elements = post.split('|')
@@ -498,12 +504,12 @@ def xml2print(xmlInput, htmlOutput, printing=False, groupPanoramas=False, compac
         elif tag == '<text>':
             # list of paragraphs
             fOut.write('<div style="clear: both;"></div>')
-            text = text +'</p><p>' if text <> '' else ''
+            text = text +'</p><p>' if text != '' else ''
             text = text + cleanText(l, False)
 
         elif tag == '<split/>':
             # splitting image table by terminating gallery
-            print 'Splitting table'
+            print('Splitting table')
 
         elif tag == '<page/>':
             # start a new page : to be used to optimize the printing version
@@ -513,10 +519,8 @@ def xml2print(xmlInput, htmlOutput, printing=False, groupPanoramas=False, compac
         elif tag in ['<image>', '</image>', '<pano>', '</pano>', '</text>']:
             # already processed
             pass
-        
         else:
             text = text + cleanText(l, False)
-
         l = f.readline()
 
     # flush remaining images if any
@@ -526,11 +530,11 @@ def xml2print(xmlInput, htmlOutput, printing=False, groupPanoramas=False, compac
     fOut.write(htmlEnd)
     fOut.close()
 
-    print "Result file:", htmlOutput
+    print("Result file:", htmlOutput)
 
     if (mosaic):
         try:
-            print "Creating mosaic page",mosaic
+            print("Creating mosaic page",mosaic)
             fOut = open(mosaic,'w')
             fOut.write(headerStart)
             fOut.write(headerMosaic)
@@ -546,17 +550,17 @@ def xml2print(xmlInput, htmlOutput, printing=False, groupPanoramas=False, compac
             fOut.write('</div>\n')
             fOut.write(htmlEnd)
             fOut.close()
-        except Exception, msg:
-            print "Problem creating mosaic page :",mosaic, msg
+        except Exception as msg:
+            print("Problem creating mosaic page :",mosaic, msg)
 
 
 if __name__ == "__main__":
     def usage():
         """
-        print help on program
+        print(help on program)
         """
 
-        print 'Usage: python xml2print.py [-p|--printing] [-g|--groupPanoramas] [-c|--compactGallery] logbook.xml logbook.html'
+        print('Usage: python xml2print.py [-p|--printing] [-g|--groupPanoramas] [-c|--compactGallery] logbook.xml logbook.html')
         sys.exit()
 
     import getopt
@@ -587,8 +591,8 @@ if __name__ == "__main__":
     if len(args) == 2:
         try:
             xml2print(args[0], args[1], printing, groupPanoramas, compactGallery, mosaic, icons)
-        except Exception, msg:
-            print "Problem:",msg
-        print "That's all, folks!"
+        except Exception as msg:
+            print("Problem:",msg)
+        print("That's all, folks!")
     else:
         usage()
