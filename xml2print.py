@@ -253,7 +253,6 @@ def cleanText(textInput, allTags=True):
     resu = re.sub('</*div>'                        , '',  resu)
     resu = re.sub('<div[^>]*>'                     , '',  resu)
     resu = re.sub('[\n\r]*'                        , '',  resu)
-    resu = re.sub('  *'                            , ' ', resu)
     # geocaching emoticons
     resu = re.sub('img src="/images/icons','img src="https://www.geocaching.com/images/icons', resu)
     if allTags:
@@ -370,6 +369,7 @@ def xml2print(xmlInput, htmlOutput, printing=False, groupPanoramas=False, compac
     text = ''
     elements = []
     log = None
+    preformatted = False
 
     fOut.write(headerStart)
 
@@ -381,11 +381,10 @@ def xml2print(xmlInput, htmlOutput, printing=False, groupPanoramas=False, compac
     currentAdditionalURL = ''
     
     # process each item of the XML input file
-    l = f.readline().strip()
+    l = f.readline()
     while l != '':
         # analyse of the XML tag
-        l = l.strip()
-        tag = re.sub('>.*', '>', l)
+        tag = re.sub('>.*', '>', l.strip())
 
         if tag in ['<image>','<pano>','<post>','<date>','</text>']:
             flushText(fOut,text)
@@ -520,7 +519,12 @@ def xml2print(xmlInput, htmlOutput, printing=False, groupPanoramas=False, compac
             # already processed
             pass
         else:
+            if tag in ['<pre>','<code>']:
+                preformatted = True
+            elif tag in ['</pre>','</code>']:
+                preformatted = False
             text = text + cleanText(l, False)
+            if preformatted: text = text + '\n'
         l = f.readline()
 
     # flush remaining images if any
