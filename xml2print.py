@@ -539,7 +539,7 @@ def xml2print(xmlInput, htmlOutput, printing=False, groupPanoramas=False, compac
     if (mosaic):
         try:
             print("Creating mosaic page",mosaic)
-            fOut = open(mosaic,'w')
+            fOut = codecs.open(mosaic, 'w', 'utf-8')
             fOut.write(headerStart)
             fOut.write(headerMosaic)
             fOut.write(headerPopup)
