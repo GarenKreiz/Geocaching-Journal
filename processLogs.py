@@ -187,9 +187,14 @@ class Logbook(object):
             listeImages.append((urlTitle.group(2), urlTitle.group(4), panora))
         else:
             try:
-                print('!!!! Log withaout image %s %s %s >>> %s'%(idLog, dateLog, titleCache, typeLog))
+                print('!!!! Log without image %s %s %s >>> %s'%(idLog, dateLog, titleCache, typeLog))
             except:
-                print(('!!!! Log without image %s %s %s >>> %s'%(idLog, dateLog, titleCache, typeLog)).encode('utf-8'))
+                # Encoding exception
+                try:
+                    print('!!!! Log without image %s %s %s >>> %s'%(idLog, dateLog, titleCache.encode('utf-8'), typeLog))
+                except:
+                    # Python 2 exception
+                    print(('!!!! Log without image %s %s %s >>> %s'%(idLog, dateLog, titleCache, typeLog)).encode('utf-8'))
 
         return (titleCache,text,listeImages)
 
