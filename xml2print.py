@@ -117,7 +117,9 @@ function downloadSelection() {
     var text = "<html><head>";
     text += document.getElementsByTagName('head')[0].innerHTML;
     text += "</head><body>";
+    text += '<div class="main"><div class="date">';
     text += document.getElementById('selectionBody').innerHTML;
+    text += "</div></div>";
     text += "</body></html>";
 
     element.setAttribute('href', 'data:text/plain;charset=utf-8,' + encodeURIComponent(text));
@@ -141,7 +143,7 @@ function selectPicture()
     text += '<div class="alignright"><a href="'+ currentLogUrl + '" target="_blank">' + 'Log' + '</a></div>';
     text += '</h3><br />';
     text += '<h3 class="post-title" align="middle">' + currentPictureName + '<br />';
-    text += '<img align="middle" style="max-width: 100%;" src="' + currentPictureUrl + '"></div></h3></div>';
+    text += '<img align="middle" style="max-width: 100%;" src="' + currentPictureUrlBig + '"></div></h3></div>';
     document.getElementById('selectionBody').innerHTML = text;
     document.getElementById('selectionLayer').style.visibility = "visible";
     closePopImage();
@@ -156,6 +158,7 @@ function showPopup(id, state)
 function popImage(url,name,cacheUrl,logUrl,cacheName)
 {
     currentPictureUrl = url;
+    currentPictureUrlBig = url.replace('Images/','https://img.geocaching.com/cache/log/');
     currentPictureName = name;
     currentCacheUrl = cacheUrl;
     currentLogUrl = logUrl
