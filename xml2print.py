@@ -137,13 +137,13 @@ function selectPicture()
     {
        text = '<h2 class="date-header">Selection Images</h2>';
     };
-    text += '<div class="post-banner"></div><div class="post-entry">';
+    text += '\\n<div class="post-banner"></div><div class="post-entry">';
     text += '<h3 class="post-title">';
     text += '<div class="alignleft"><a href="'+ currentCacheUrl + '" target="_blank">' + currentCacheName + '</a></div>';
     text += '<div class="alignright"><a href="'+ currentLogUrl + '" target="_blank">' + 'Log' + '</a></div>';
     text += '</h3><br />';
     text += '<h3 class="post-title" align="middle">' + currentPictureName + '<br />';
-    text += '<img align="middle" style="max-width: 100%;" src="' + currentPictureUrlBig + '"></div></h3></div>';
+    text += '<img align="middle" style="max-width: 100%;" src="' + currentPictureUrlBig + '"></div></h3></div>\\n';
     document.getElementById('selectionBody').innerHTML = text;
     document.getElementById('selectionLayer').style.visibility = "visible";
     closePopImage();
@@ -159,13 +159,14 @@ function popImage(url,name,cacheUrl,logUrl,cacheName)
 {
     currentPictureUrl = url;
     currentPictureUrlBig = url.replace('Images/','https://img.geocaching.com/cache/log/');
+	currentPictureUrlBig = currentPictureUrlBig.replace('/log/display/','/log/');
     currentPictureName = name;
     currentCacheUrl = cacheUrl;
     currentLogUrl = logUrl
     currentCacheName = cacheName;
     currenLogUrl = logUrl;
     var image = document.getElementById('popupContent').getElementsByTagName('img')[0];
-    image.src = url;
+    image.src = currentPictureUrlBig;
     document.getElementById('popupTitle').innerHTML = "&nbsp;&nbsp;"+name;
     document.getElementById('showCache'    ).setAttribute("onclick","window.open('" + cacheUrl + "', '_blank');");
     document.getElementById('showLog'      ).setAttribute("onclick","window.open('" + logUrl + "', '_blank');");
@@ -549,8 +550,7 @@ def xml2print(xmlInput, htmlOutput, printing=False, groupPanoramas=False, compac
             fOut.write(bodyMosaic)
             fOut.write('<div class="mosaic">')
 
-            kPictures = allPictures.keys()
-            kPictures.sort()
+            kPictures = sorted(allPictures)
             for k in kPictures:
                 for (comment, location, url1, url2, cacheName) in allPictures[k]:
                     fOut.write('<a onclick="popImage(\'%s\',\'%s\',\'%s\',\'%s\',\'%s\');"><img class="thumb" title="%s" src="%s" /></a>\n'%(k,safeString(comment),url1,url2,safeString(cacheName),comment,k))
