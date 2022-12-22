@@ -148,7 +148,8 @@ class Logbook(object):
                     try:
                         print("Processing cache " + titleCache)
                     except:
-                        print("Processing cache %r"%titleCache)
+                        print("Error")
+                        print("Processing cache %r"%titleCache.encode('utf-8'))
                 dataLog = fr.read()
         return self.parseLog(dataLog, dateLog, idLog, idCache, titleCache, typeLog, natureLog)
     
@@ -279,7 +280,7 @@ class Logbook(object):
             else:
                 textLog = None
                 dateLog = self.__normalizeDate(listTd[2].strip())
-                typeLog = re.search('title="(.*)".*>', listTd[0]).group(1)
+                typeLog = re.search('title="([^"]*)".*>', listTd[0]).group(1)
                 if re.search('Favorited',listTd[1]):
                     typeLog = typeLog + ' [favorite]'
                 idCache = re.search('guid=(.*?)"', listTd[3]).group(1)
@@ -294,6 +295,10 @@ class Logbook(object):
             #keep = (True if typeLog.lower() in [item.lower() for item in self.excluded] else False)
             #test short string research exclude - ex : -x Write for Write note or -x Found for Found it - etc.
             keepLog = (False if len([excluded for excluded in self.excluded if excluded.lower() in typeLog.lower()]) else True)
+
+            # Filter a specific cache using its title
+			# keepLog = re.search("ombre de la merveille",titleCache)
+
             if keepLog and idLog != '':
                 try:
                     days[dateLog].append((idLog, idCache, titleCache, typeLog, natureLog, textLog, imagesList))
@@ -303,7 +308,7 @@ class Logbook(object):
                     try:
                         print("%s|%s|%s|%s|%s|%s"%(idLog, dateLog, idCache, titleCache, typeLog, natureLog))
                     except:
-                        print("%s|%s|%s|%r|%s|%s"%(idLog, dateLog, idCache, titleCache, typeLog, natureLog))
+                        print("%s|%s|%s|%s|%s|%s"%(idLog, dateLog, idCache, titleCache.encode('utf-8'), typeLog, natureLog))
         dates = sorted(days)
         for dateLog in dates:
             # check if date is in the correct interval
