@@ -260,7 +260,7 @@ class Logbook(object):
         tagTr = re.finditer('<tr(.*?)</tr>', tagTable, re.S)
         listTr = [result.group(1) for result in tagTr]
         for tr in listTr:
-            td = re.finditer('<td>(.*?)</td>', tr, re.S)
+            td = re.finditer('<td[^>]*>(.*?)</td>', tr, re.S)
             listTd = [result.group(1) for result in td]
             imagesList = []
             if natureLog == 'C':
@@ -295,10 +295,8 @@ class Logbook(object):
             #keep = (True if typeLog.lower() in [item.lower() for item in self.excluded] else False)
             #test short string research exclude - ex : -x Write for Write note or -x Found for Found it - etc.
             keepLog = (False if len([excluded for excluded in self.excluded if excluded.lower() in typeLog.lower()]) else True)
-
             # Filter a specific cache using its title
-			# keepLog = re.search("ombre de la merveille",titleCache)
-
+            #keepLog = re.search("ombre de la merveille",titleCache)
             if keepLog and idLog != '':
                 try:
                     days[dateLog].append((idLog, idCache, titleCache, typeLog, natureLog, textLog, imagesList))
