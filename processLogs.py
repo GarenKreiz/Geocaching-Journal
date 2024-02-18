@@ -31,9 +31,14 @@
 import re
 import os
 import sys
+import json
 import time
 import codecs
 import urllib
+import locale
+
+locale.setlocale(locale.LC_ALL, '')
+
 try:
     import urllib2 as Request
     from cookielib import CookieJar
@@ -58,7 +63,7 @@ class Logbook(object):
     # urls for different types of logs
     urlsLogs = { 'C': 'seek', 'L': 'seek', 'T': 'track'}
     # urls for cacherss, caches and trackable
-    urls = { 'C': 'profile', 'L': 'seek/cache_details.aspx', 'T': 'track/details.aspx'}
+    urls = { 'C': 'profile?guid=', 'L': 'geocache/', 'T': 'track/details.aspx?guid='}
 
     def __init__(self,
                  fNameInput, fNameOutput="logbook.xml",
@@ -136,9 +141,19 @@ class Logbook(object):
                 self.login()
                 response = self.urlOpener.open(url)
                 dataLog = response.read().decode('utf-8')
+                # 2023/11 : log information is stored in a json structure of the webpage
+                jsonStart = dataLog.find('application/json">')+len('application/json">')
+                jsonEnd = dataLog.find('</script',jsonStart)
                 print("Saving log file "+idLog)
+                jsonString = dataLog[jsonStart:jsonEnd]
+                dataLog = jsonString
+                jsonData = json.loads(jsonString)
+                # clean json data to save in file to reduce size
+                keysSaved = ['logText','logDate','geocache','guid', 'images']
+                propsData = {k: v for k, v in jsonData['props']['pageProps'].items() if k in keysSaved}
+                jsonData['props']['pageProps'] = propsData
                 with codecs.open(dirLog+idLog, 'w', 'utf-8') as fw:
-                    fw.write(dataLog)
+                    fw.write(json.dumps(jsonData, indent=1, sort_keys=False))
             except (Request.HTTPError, Request.URLError) as msg:
                 print("Error accessing log "+idLog, msg)
                 return
@@ -161,6 +176,7 @@ class Logbook(object):
 
         text = ''
         listeImages = []
+        jsonData = {}
 
         if natureLog == 'T' and 'cache_details.aspx' in dataLog:
             # adding the name of the cache where the trackable is, if present in the log
@@ -170,9 +186,11 @@ class Logbook(object):
         if '_LogText">' in dataLog:
             text = re.search('_LogText">(.*?)</span>', dataLog, re.S).group(1)
             text = re.sub('src="/images/', 'src="http://www.geocaching.com/images/', text)
+        elif 'logText' in dataLog:
+            jsonData = json.loads(dataLog)
+            text=jsonData['props']['pageProps']['logText']
         else:
             print("!!!! Log unavailable", idLog)
-
         if 'LogBookPanel1_GalleryList' in dataLog: #if Additional images
             tagTable = re.search('<table id="ctl00_ContentBody_LogBookPanel1_GalleryList(.*?)</table>',dataLog, re.S).group(0)
             title = re.findall('<img alt=\'(.*?)\' src', tagTable, re.S)
@@ -186,6 +204,12 @@ class Logbook(object):
             urlTitle = re.search('id="ctl00_ContentBody_LogBookPanel1_ImageMain(.*?)href="(.*?)" target(.*?)span class="logimg-caption">(.*?)</span><span>',dataLog, re.S)
             panora = self.__isPanorama(urlTitle.group(4))
             listeImages.append((urlTitle.group(2), urlTitle.group(4), panora))
+        elif 'logText' in dataLog and 'images' in jsonData['props']['pageProps']:
+            jsonImages = jsonData['props']['pageProps']['images']
+            for image in jsonImages:
+                panora = self.__isPanorama(image['name'])
+                url = re.sub('com/','com/log/display/',image['url'])
+                listeImages.append((url,image['name'],panora))
         else:
             try:
                 print('!!!! Log without image %s %s %s >>> %s'%(idLog, dateLog, titleCache, typeLog))
@@ -204,7 +228,7 @@ class Logbook(object):
         analyses the HTML content of a log page
         """
 
-        self.fXML.write('<post>%s | http://www.geocaching.com/%s?guid=%s |'%(titleCache, Logbook.urls[natureLog], idCache))
+        self.fXML.write('<post>%s | http://www.geocaching.com/%s%s |'%(titleCache, Logbook.urls[natureLog], idCache))
         self.fXML.write('%s | http://www.geocaching.com/%s/log.aspx?LUID=%s</post>\n'%(typeLog, Logbook.urlsLogs[natureLog], idLog))
 
         self.fXML.write('<text>%s</text>\n'%textLog)
@@ -283,11 +307,11 @@ class Logbook(object):
                 typeLog = re.search('title="([^"]*)".*>', listTd[0]).group(1)
                 if re.search('Favorited',listTd[1]):
                     typeLog = typeLog + ' [favorite]'
-                idCache = re.search('guid=(.*?)"', listTd[3]).group(1)
+                idCache = re.search('geocache/(.*?)"', listTd[3]).group(1)
                 typeCache = re.search('title="([^"]*)"', listTd[3]).group(1)
                 idLog = re.search('LUID=(.*?)"', listTd[5]).group(1)
                 titleCache = re.search('</a> <a(.*)?\">(.*)</a>', listTd[3]).group(2).replace('</span>', '')
-                natureLog = ('L' if listTd[3].find('cache_details') > 1 else 'T') # C for Cache and T for trackable
+                natureLog = ('L' if listTd[3].find('geocache') > 1 else 'T') # C for Cache and T for trackable
             allLogs += 1
             if (typeCache):
                 typeLog += ' [%s]'%typeCache
@@ -346,7 +370,7 @@ class Logbook(object):
         except:
             pass
         date = time.strftime('%A %d %B %Y', time.localtime(t))
-        date = re.sub(' 0', ' ', date)
+        date = re.sub(' 0', ' ', date).capitalize()
         return date
 
     def __normalizeDate(self, date):
