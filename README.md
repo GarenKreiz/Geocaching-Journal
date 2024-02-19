@@ -248,6 +248,7 @@ Dans le fichier [logbook.css](logbook.css)
 
 # Releases - Versions
 
+* 1.5.0 : geocaching id and password stored in ~/.georc file
 * 1.4.0 : button to select some images that will be displayed as a list at the end of the page
 * 1.3.0 : popup window for images, mosaic of images
 * 1.2.0 : journal for trackables, option to exclude some types of logs, option for galleries presentation
