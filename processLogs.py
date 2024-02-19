@@ -472,6 +472,14 @@ if __name__ == '__main__':
 
     print("Excluded:", excluded)
 
+    # use ~/.georc from geo-* to store USERNAME and PASSWORD (double quoted)
+    if not user and os.path.isfile(os.path.expanduser('~/.georc')):
+        with codecs.open(os.path.expanduser('~/.georc'), 'r', 'utf-8') as fr:
+            for l in fr.readlines():
+                if l.find('USERNAME=') == 0:
+                    user = re.sub('USERNAME="(.*)".*','\\1',l.strip())
+                if l.find('PASSWORD=') == 0:
+                    password = re.sub('PASSWORD="(.*)".*','\\1',l.strip())
     if len(args) == 2:
         if re.search(".xml", args[0], re.IGNORECASE):
             xmlFile = args[0]
@@ -480,7 +488,7 @@ if __name__ == '__main__':
         else:
             xmlFile = "logbook.xml"
 
-        # firt phase : from Groundspeak HTML to XML
+        # first phase : from Groundspeak HTML to XML
         if re.search(".htm[l]*", args[0], re.IGNORECASE):
             Logbook(args[0], xmlFile, verbose, startDate, endDate, refresh, excluded, user, password).processLogs()
 

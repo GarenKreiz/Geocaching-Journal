@@ -37,6 +37,7 @@ These scripts were tested on Python 2.7.
 ```
 $ python processLogs.py -u user/password geocaching_logs.html logbook.xml
 ```
+* To avoid using the geocaching ids in the command line, they can be stored in a file  **~/.georc** (also used **geo-\***, line `USERNAME="pseudo"` and line `PASSWORD="mdp"`)
 
 * Check the content of the file : the title and description can be directly edited in the file [logbook_header.xml](logbook_header.xml) 
 * Run the [xml2print.py](xml2print.py) script to generate an HTML file **logbook.html**
@@ -156,6 +157,8 @@ Ces scripts ont été testés avec Python 2.7
 ```
 $ python processLogs.py -u user/password geocaching_logs.html logbook.xml
 ```
+
+* Pour éviter de saisir les identifiants geocaching, il est possible de les mettre dans un fichier **~/.georc** (fichier utilisé aussi par **geo-\***, ligne `USERNAME="pseudo"` et ligne `PASSWORD="mdp"`)
 
 * Vérifier le contenu du fichier : le titre et la description du journal peuvent être modifiés dans le fichier [logbook_header.xml](logbook_header.xml)
 * Lancer le script [xml2print.py](xml2print.py) pour générer un fichier HHTML
