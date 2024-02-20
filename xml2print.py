@@ -29,10 +29,13 @@
 #
 """
 
+import os
 import re
 import sys
 import codecs
+import shutil
 import string
+
 
 maxRow = 3   # number of pictures in a row (less than 4)
 allPictures = {};  # all picture descriptions
@@ -364,7 +367,10 @@ def xml2print(xmlInput, htmlOutput, printing=False, groupPanoramas=False, compac
     """
 
     global typeIcons
-    
+
+    if not os.path.exists('logbook.css'):
+        shutil.copy(os.path.join(os.path.dirname(sys.argv[0]), 'logbook.css'), '.')
+
     #fOut = open(htmlOutput, 'w', encoding="utf-8")
     fOut = codecs.open(htmlOutput, 'w', 'utf-8')
     firstDate = True
