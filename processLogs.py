@@ -34,8 +34,9 @@ import sys
 import json
 import time
 import codecs
-import urllib
 import locale
+import shutil
+import urllib
 
 locale.setlocale(locale.LC_ALL, '')
 
@@ -252,7 +253,11 @@ class Logbook(object):
         analyse of the HTML page with all the logs of the geocacher
         local dump of the web page https://www.geocaching.com/my/logs.aspx?s=1
         """
+        global bookTitle, bookDescription
 
+        headerFile = 'logbook_header.xml'
+        if not os.path.exists(headerFile):
+            shutil.copy(os.path.join(os.path.dirname(sys.argv[0]), headerFile), '.')
 
         allLogs = 0
         days = {}
@@ -264,7 +269,6 @@ class Logbook(object):
         # natureLog : C for caches, L for logs, T for trackables
         natureLog = 'C' if re.search('CacheDetail',cacheData) else 'L' # T detected later
 
-        headerFile = 'logbook_header.xml'
         if natureLog == 'C':
             bookTitle = re.search('og:title" content="([^"]*)"',cacheData).group(1)
             bookDescription = u"Journal des visites à la cache " + bookTitle
