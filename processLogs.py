@@ -303,7 +303,7 @@ class Logbook(object):
                 idCache = re.search('guid=(.*?)"', divs.group(1)).group(1)
                 idLog = re.search('LUID=(.*?)"',divs.group(6)).group(1)
                 titleCache =  divs.group(2)
-                imgs = re.finditer('"(https:\/\/img.geocaching.com[^"]*)".*?quot;> *(.*?) *</span',listTd[0],re.S)
+                imgs = re.finditer('"(https:\/\/img.geocaching.com[^"]*)".*?quot;> *(.*?) *</span',textLog,re.S)
                 imagesList = [(result.group(1),result.group(2),self.__isPanorama(result.group(2))) for result in imgs]
             else:
                 textLog = None
