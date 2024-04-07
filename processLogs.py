@@ -297,13 +297,14 @@ class Logbook(object):
                     break
                 textLog = divs.group(5)
                 textLog = re.sub('<div class="log-cta">.*','',textLog)      # clean text
+                imgs = re.finditer('"(https:\/\/img.geocaching.com[^"]*)".*?quot;> *(.*?) *</span',textLog,re.S)
+                textLog = re.sub('</div> *<div class="TableLogContent">.*','',textLog)
                 dateLog = self.__normalizeDate(divs.group(4))
                 typeLog = divs.group(3)
                 typeCache = ''
                 idCache = re.search('guid=(.*?)"', divs.group(1)).group(1)
                 idLog = re.search('LUID=(.*?)"',divs.group(6)).group(1)
                 titleCache =  divs.group(2)
-                imgs = re.finditer('"(https:\/\/img.geocaching.com[^"]*)".*?quot;> *(.*?) *</span',textLog,re.S)
                 imagesList = [(result.group(1),result.group(2),self.__isPanorama(result.group(2))) for result in imgs]
             else:
                 textLog = None
