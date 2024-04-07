@@ -56,13 +56,13 @@ bookTitle = u"""<title>Titre à parametrer<br/> Customizable title</title>"""
 bookDescription = u"""<description>Description du journal - Logbook description - Fichier à modifier : logbook_header.xml - Modify file : logbook_header.xml</description>"""
 class Logbook(object):
     """
-    Logbook : generate a list of logs with images for a geocacher
+    Logbook : generate a list of logs with images for a geocacher's list, for the logs on a specific cache or the logs of a trackable
     """
     # directories to save logs (different for TB to avoid conflicts
     dirLog = { 'C': 'Logs', 'L': 'Logs', 'T':'LogsTB'}
     # urls for different types of logs
     urlsLogs = { 'C': 'seek', 'L': 'seek', 'T': 'track'}
-    # urls for cacherss, caches and trackable
+    # urls for caches, cachers and trackables
     urls = { 'C': 'profile?guid=', 'L': 'geocache/', 'T': 'track/details.aspx?guid='}
 
     def __init__(self,
@@ -264,7 +264,7 @@ class Logbook(object):
             cacheData = fIn.read()
 
         # natureLog : C for caches, L for logs, T for trackables
-        natureLog = 'C' if re.search('CacheDetail',cacheData) else 'L' # T detected later
+        natureLog = 'C' if re.search('cacheDetails',cacheData) else 'L' # T detected later
 
         if natureLog == 'C':
             bookTitle = re.search('og:title" content="([^"]*)"',cacheData).group(1)
@@ -293,6 +293,8 @@ class Logbook(object):
                 if  len(listTd) == 0:
                     break
                 divs = re.search('href="([^"]*")[^>]*>([^<]+)</a>.*title="(.+)" alt.*LogDate">(.+)</span>.*LogText">(.*)</div>.*href="/seek/log([^"]+")',listTd[0], re.S)
+                if not divs:
+                    break
                 textLog = divs.group(5)
                 dateLog = self.__normalizeDate(divs.group(4))
                 typeLog = divs.group(3)
