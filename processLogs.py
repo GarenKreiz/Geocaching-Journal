@@ -296,6 +296,7 @@ class Logbook(object):
                 if not divs:
                     break
                 textLog = divs.group(5)
+                textLog = re.sub('<div class="log-cta">.*','',textLog)      # clean text
                 dateLog = self.__normalizeDate(divs.group(4))
                 typeLog = divs.group(3)
                 typeCache = ''
