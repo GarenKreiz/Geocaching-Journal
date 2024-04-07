@@ -54,7 +54,6 @@ except:
 # default title and description of the logbook (should be in logbook_header.xml)
 bookTitle = u"""<title>Titre à parametrer<br/> Customizable title</title>"""
 bookDescription = u"""<description>Description du journal - Logbook description - Fichier à modifier : logbook_header.xml - Modify file : logbook_header.xml</description>"""
-
 class Logbook(object):
     """
     Logbook : generate a list of logs with images for a geocacher
@@ -129,16 +128,14 @@ class Logbook(object):
         
 
     def getLog(self, dateLog, idLog, idCache, titleCache, typeLog, natureLog):
-        
-        dirLog = Logbook.dirLog[natureLog] + '/_%s_/'%idLog[0]
+        dirLog = Logbook.dirLog[natureLog] + '/_%s_/'%idLog[-1]
         if not os.path.isfile(dirLog+idLog) or self.refresh:
             if not os.path.isdir(dirLog):
                 print("Creating directory "+dirLog)
                 os.makedirs(dirLog)
-            url = 'https://www.geocaching.com/'+Logbook.urlsLogs[natureLog]+'/log.aspx?LUID='+idLog
+            url = 'https://www.geocaching.com/live/log/'+idLog
             print("Fetching log", url)
             try:
-                # dataLog = urllib.request.urlopen(url).read().decode('utf-8')
                 self.login()
                 response = self.urlOpener.open(url)
                 dataLog = response.read().decode('utf-8')
@@ -205,7 +202,7 @@ class Logbook(object):
             urlTitle = re.search('id="ctl00_ContentBody_LogBookPanel1_ImageMain(.*?)href="(.*?)" target(.*?)span class="logimg-caption">(.*?)</span><span>',dataLog, re.S)
             panora = self.__isPanorama(urlTitle.group(4))
             listeImages.append((urlTitle.group(2), urlTitle.group(4), panora))
-        elif 'logText' in dataLog and 'images' in jsonData['props']['pageProps']:
+        elif 'logText' in dataLog and jsonData['props']['pageProps']['images']:
             jsonImages = jsonData['props']['pageProps']['images']
             for image in jsonImages:
                 panora = self.__isPanorama(image['name'])
@@ -230,9 +227,9 @@ class Logbook(object):
         """
 
         self.fXML.write('<post>%s | http://www.geocaching.com/%s%s |'%(titleCache, Logbook.urls[natureLog], idCache))
-        self.fXML.write('%s | http://www.geocaching.com/%s/log.aspx?LUID=%s</post>\n'%(typeLog, Logbook.urlsLogs[natureLog], idLog))
-
-        self.fXML.write('<text>%s</text>\n'%textLog)
+        self.fXML.write('%s | http://www.geocaching.com/live/log/%s</post>\n'%(typeLog, idLog))
+        textLog = re.sub('\n','</p><p>',textLog)
+        self.fXML.write('<text><p>%s</p></text>\n'%textLog)
 
         # listeImages.sort(key=lambda e: e[2]) # panoramas are displayed after the other images - sort by field panora
 
@@ -311,11 +308,14 @@ class Logbook(object):
                 typeLog = re.search('title="([^"]*)".*>', listTd[0]).group(1)
                 if re.search('Favorited',listTd[1]):
                     typeLog = typeLog + ' [favorite]'
-                idCache = re.search('geocache/(.*?)"', listTd[3]).group(1)
-                typeCache = re.search('title="([^"]*)"', listTd[3]).group(1)
-                idLog = re.search('LUID=(.*?)"', listTd[5]).group(1)
-                titleCache = re.search('</a> <a(.*)?\">(.*)</a>', listTd[3]).group(2).replace('</span>', '')
                 natureLog = ('L' if listTd[3].find('geocache') > 1 else 'T') # C for Cache and T for trackable
+                if natureLog == 'L':
+                    idCache = re.search('geocache/(.*?)"', listTd[3]).group(1)
+                else:
+                    idCache = re.search('TB=(.*?)"', listTd[3]).group(1)
+                typeCache = re.search('title="([^"]*)"', listTd[3]).group(1)
+                idLog = re.search('live/log/(.*?)" target', listTd[5]).group(1)
+                titleCache = re.search('</a> <a(.*)?\">(.*)</a>', listTd[3]).group(2).replace('</span>', '')
             allLogs += 1
             if (typeCache):
                 typeLog += ' [%s]'%typeCache
