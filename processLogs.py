@@ -227,7 +227,10 @@ class Logbook(object):
         """
 
         self.fXML.write('<post>%s | http://www.geocaching.com/%s%s |'%(titleCache, Logbook.urls[natureLog], idCache))
-        self.fXML.write('%s | http://www.geocaching.com/live/log/%s</post>\n'%(typeLog, idLog))
+        if idLog[0:1] == 'GL':
+            self.fXML.write('%s | http://www.geocaching.com/live/log/%s</post>\n'%(typeLog, idLog))
+        else:
+            self.fXML.write('%s | http://www.geocaching.com/seek/log.aspx?LUID=%s</post>\n'%(typeLog, idLog))
         textLog = re.sub('\n','</p><p>',textLog)
         self.fXML.write('<text><p>%s</p></text>\n'%textLog)
 
