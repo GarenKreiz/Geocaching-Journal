@@ -14,7 +14,7 @@ Generation of a journal of geocaching logs
 * exclude some types of cache or log (-x)
 * requires no external modules
 
-These scripts were tested on Python 2.7.
+These scripts were tested on Python 3.11.
 
 ## Installation
 
@@ -28,7 +28,9 @@ These scripts were tested on Python 2.7.
 ## Usage
 
 * On the geocaching web site, verify that your date format preferences are in numerical form ("MM/DD/YY" not supported)
-* Save locally the content of the web page https://www.geocaching.com/my/logs.aspx?s=1 , for example in file **geocaching_logs.html**. Save it as a plain HTML file.
+* Logs : Save locally the content of the web page https://www.geocaching.com/my/logs.aspx?s=1 , for example in file **geocaching_logs.html**. Save it as a plain HTML file.
+* Trackables : Save the page https://www.geocaching.com/my/logs.aspx?s=2
+* Geocaches : on the cache webpage, scroll to the bottom to display all the logs, in the browser, use right-click on the page to inspect the source code, select the HTML tag and copy the outer content then paste it in a local file
 * Run the [processLogs.py](processLogs.py) script to generate an XML file for example **logbook.xml**.
 * It create a directory Logs to save the logs' HTML page before parsing them.
 * Authentication to the geocaching website is necessary to download logs (first use of processLogs, new logs or -r option)
@@ -134,7 +136,7 @@ Generation d'un journal des notes de géocaching
 * exclusion de certains types de cache ou de log (-x)
 * paramétrisation du fichier HTML généré avec des styles CSS ou par modification des scripts
 
-Ces scripts ont été testés avec Python 2.7
+Ces scripts ont été testés avec Python 3.11
 
 ## Installation
 
@@ -148,7 +150,9 @@ Ces scripts ont été testés avec Python 2.7
 ## Utilisation
 
 * Vérifier les préférences du site geocaching : le format des dates doit être numérique (à l'exception du format "mm/jj/aa")
-* Faire une sauvegarde locale de la page contenant tous vos logs https://www.geocaching.com/my/logs.aspx?s=1 , par exemple dans le fichier **geocaching_logs.html**. Le format de la sauvegarde doit être de l'HTML simple.
+* Logs : Faire une sauvegarde locale de la page contenant tous vos logs https://www.geocaching.com/my/logs.aspx?s=1 , par exemple dans le fichier **geocaching_logs.html**. Le format de la sauvegarde doit être de l'HTML simple.
+* Trackables : Faire une sauvegarde de la page https://www.geocaching.com/my/logs.aspx?s=2
+* Géocaches : Afficher la page de la cache, scroller pour faire apparaître tous les logs, inspecter le code source (click droit), selectionner le tag HTML global et le copier (copie externe), coller le contenu dans un fichier local
 * Lancer le script [processLogs.py](processLogs.py) pour générer un fichier XML **logbook.xml**
 * Cela crée un répertoire **Logs** contenant un cache local des descriptions HTML des notes
 * La connexion au site Geocaching est nécessaire pour télécharger les notes (lancement initial, nouvelles notes ou option -r)
