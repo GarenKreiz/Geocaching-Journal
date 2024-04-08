@@ -246,12 +246,18 @@ Dans le fichier [logbook.css](logbook.css)
 * couleurs
 * tailles et indentations
 
-# Sample - Echantillon
+# Samples - Echantillons
 
-![Example](https://raw.githubusercontent.com/GarenKreiz/Geocaching-Journal/master/logbook_example.jpg)
+* [Geocaching journal 2001-2010](http://www.garenkreiz.net/Geocaching-Journal/Journal_2001-2010.html)
+* [Geocaching journal 2011-2016](http://www.garenkreiz.net/Geocaching-Journal/Journal_2011-2016.html)
+* [Cache journal "Following the furrow"](http://www.garenkreiz.net/Geocaching-Journal/Journal_Following_the_furrow_202404.html)
+  
+![Customized example](https://raw.githubusercontent.com/GarenKreiz/Geocaching-Journal/master/logbook_example.jpg)
+
 
 # Releases - Versions
 
+* 1.6.0 : changes for log ids on the geocaching website
 * 1.5.0 : geocaching id and password stored in ~/.georc file
 * 1.4.0 : button to select some images that will be displayed as a list at the end of the page
 * 1.3.0 : popup window for images, mosaic of images
