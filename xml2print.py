@@ -35,6 +35,10 @@ import sys
 import codecs
 import shutil
 import string
+try:
+    import markdown
+except:
+    markdown = None
 
 
 maxRow = 3   # number of pictures in a row (less than 4)
@@ -514,7 +518,13 @@ def xml2print(xmlInput, htmlOutput, printing=False, groupPanoramas=False, compac
             # list of paragraphs
             fOut.write('<div style="clear: both;"></div>')
             text = text +'</p><p>' if text != '' else ''
-            text = text + cleanText(l, False)
+
+            if markdown:
+                l = re.sub('</p><p>','\n',l)
+                l = re.sub('</?p>','',l)
+                text = text + markdown.markdown(l)
+            else:
+                text = text + cleanText(l, False)
 
         elif tag == '<split/>':
             # splitting image table by terminating gallery
