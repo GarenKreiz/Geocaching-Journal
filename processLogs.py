@@ -183,7 +183,7 @@ class Logbook(object):
 
         if '_LogText">' in dataLog:
             text = re.search('_LogText">(.*?)</span>', dataLog, re.S).group(1)
-            text = re.sub('src="/images/', 'src="http://www.geocaching.com/images/', text)
+            text = re.sub('src="/images/', 'src="https://www.geocaching.com/images/', text)
         elif 'logText' in dataLog:
             jsonData = json.loads(dataLog)
             text=jsonData['props']['pageProps']['logText']
@@ -194,7 +194,7 @@ class Logbook(object):
             title = re.findall('<img alt=\'(.*?)\' src', tagTable, re.S)
             title = [re.sub(' log image', "", result) for result in title]
             url = re.findall('src="(.*?)" />', tagTable, re.S)
-            url = [re.sub('log/.*/', "log/display/", result) for result in url] # normalize form : http://img.geocaching.com/cache/log/display/*.jpg
+            url = [re.sub('log/.*/', "log/display/", result) for result in url] # normalize form : https://img.geocaching.com/cache/log/display/*.jpg
             for index, tag in enumerate(url):
                 panora = self.__isPanorama(title[index])
                 listeImages.append((url[index], title[index], panora))
@@ -226,11 +226,11 @@ class Logbook(object):
         analyses the HTML content of a log page
         """
 
-        self.fXML.write('<post>%s | http://www.geocaching.com/%s%s |'%(titleCache, Logbook.urls[natureLog], idCache))
+        self.fXML.write('<post>%s | https://www.geocaching.com/%s%s |'%(titleCache, Logbook.urls[natureLog], idCache))
         if idLog[0:2] == 'GL':
-            self.fXML.write('%s | http://www.geocaching.com/live/log/%s</post>\n'%(typeLog, idLog))
+            self.fXML.write('%s | https://www.geocaching.com/live/log/%s</post>\n'%(typeLog, idLog))
         else:
-            self.fXML.write('%s | http://www.geocaching.com/seek/log.aspx?LUID=%s</post>\n'%(typeLog, idLog))
+            self.fXML.write('%s | https://www.geocaching.com/seek/log.aspx?LUID=%s</post>\n'%(typeLog, idLog))
         textLog = re.sub('\n','</p><p>',textLog)
         self.fXML.write('<text><p>%s</p></text>\n'%textLog)
 
