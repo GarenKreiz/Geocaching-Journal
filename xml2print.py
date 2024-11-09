@@ -40,7 +40,6 @@ try:
 except:
     markdown = None
 
-
 maxRow = 3   # number of pictures in a row (less than 4)
 allPictures = {};  # all picture descriptions
 
@@ -365,7 +364,7 @@ typeIcons = {
     'Webcam Photo Taken' : 'found',
     }
 
-def xml2print(xmlInput, htmlOutput, printing=False, groupPanoramas=False, compactGallery=False, mosaic=None, icons=False):
+def xml2print(xmlInput, htmlOutput, printing=False, groupPanoramas=False, compactGallery=False, mosaic=None, icons=False, verbose=False):
     """
     main function of module : generation of an HTML file from an XML file
     """
@@ -481,10 +480,11 @@ def xml2print(xmlInput, htmlOutput, printing=False, groupPanoramas=False, compac
                 fOut.write(postEnd + postBanner) # banner between 2 posts
             processingPost = True
             post = cleanText(l)
-            try:
-                print('Post:', re.sub('\|.*', '', post))
-            except:
-                print('Post:', (re.sub('\|.*', '', post)).encode('utf-8'))
+            if verbose:
+                try:
+                    print('Post:', re.sub('\|.*', '', post))
+                except:
+                    print('Post:', (re.sub('\|.*', '', post)).encode('utf-8'))
 
             # <post>left title|left url|right title|right url</post>
             elements = post.split('|')
@@ -596,7 +596,7 @@ if __name__ == "__main__":
 
     import getopt
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "hipgcm:", ['help', 'icons', 'printing', 'groupPanoramas','compactGallery','mosaic'])
+        opts, args = getopt.getopt(sys.argv[1:], "hipgcvm:", ['help', 'icons', 'printing', 'groupPanoramas','compactGallery','verbose','mosaic'])
     except getopt.GetoptError:
         usage()
 
@@ -605,6 +605,7 @@ if __name__ == "__main__":
     compactGallery = False
     mosaic = None
     icons = False
+    verbose = False
     for opt, arg in opts:
         if opt == '-h':
             usage()
@@ -618,10 +619,12 @@ if __name__ == "__main__":
             mosaic = arg
         elif opt == "-i":
             icons = True
+        elif opt == "-v":
+            verbose = True
 
     if len(args) == 2:
         try:
-            xml2print(args[0], args[1], printing, groupPanoramas, compactGallery, mosaic, icons)
+            xml2print(args[0], args[1], printing, groupPanoramas, compactGallery, mosaic, icons, verbose)
         except Exception as msg:
             print("Problem:",msg)
         print("That's all, folks!")
