@@ -73,8 +73,8 @@ dateFormat = '<div class="date"><h2 class="date-header">%s</h2><div class="post-
 postBegin = '<h3 class="post-title">'
 postMiddle = '</h3>'
 postBanner = '<div class="post-banner"></div><div class="post-entry">'
-postEnd = '</div>'
-dateEnd = '</div>  <!--// class:date //-->'
+postEnd = '</div>\n\n'
+dateEnd = '</div>  <!--// class:date //-->\n\n'
 
 pictureFormatTemplate = """
 <table class="picture"><tbody>
