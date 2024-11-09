@@ -460,10 +460,18 @@ def xml2print(xmlInput, htmlOutput, printing=False, groupPanoramas=False, compac
             firstDate = False
             processingPost = False
 
+            # date | url
             date = cleanText(l)
+            url = None
+            elements = date.split('|')
+            date = elements[0].strip()
+            if len(elements) > 1:
+                url = elements[1].strip()
             if date != '':
                 #date = string.upper(date[0])+date[1:]
                 date.capitalize()
+            if url:
+                date = '<a href="'+url+'" target="_blank">'+date+'</a>'
             fOut.write(dateFormat % date)
             text = ''
 
