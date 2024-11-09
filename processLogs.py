@@ -362,8 +362,8 @@ class Logbook(object):
                 if not textLog:
                     (cacheTitle, textLog, imagesList) = self.getLog(dateLog, idLog, idCache, titleCache, typeLog, natureLog)
                 self.outputLog(dateLog, idLog, idCache, titleCache, typeLog, natureLog, textLog, imagesList)
-        self.fXML.write('<date>Icons : Groundspeak (Copyright)</date>\n')
-        self.fXML.write('<date>Source : GarenKreiz/Geocaching-Journal @ GitHub (CC BY-NC 3.0 FR)</date>\n')
+        self.fXML.write('<date>Icons : Groundspeak (Copyright) | https://www.geocaching.com/about/logousage.aspx</date>\n')
+        self.fXML.write('<date>Source : GarenKreiz/Geocaching-Journal @ GitHub (CC BY-NC 3.0 FR) | https://github.com/GarenKreiz/Geocaching-Journal</date>\n')
         self.fXML.close()
         print('Logs: ', self.nLogs, '/', allLogs, 'Days:', self.nDates, '/', len(dates))
         print('Result file:', self.fNameOutput)
