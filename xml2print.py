@@ -330,8 +330,13 @@ def flushText(fOut,text):
     """
 
     if text:
-        if '<p>' not in text[0:10]:
-            text = '<p>'+text+'</p>'
+        if markdown:
+            text = re.sub('</p><p>','\n\n',text)
+            text = re.sub('</?p>','',text)
+            text = markdown.markdown(text)
+        else:
+            if '<p>' not in text[0:10]:
+                text = '<p>'+text+'</p>'
         fOut.write(text)
 
 typeIcons = {
@@ -527,12 +532,7 @@ def xml2print(xmlInput, htmlOutput, printing=False, groupPanoramas=False, compac
             fOut.write('<div style="clear: both;"></div>')
             text = text +'</p><p>' if text != '' else ''
 
-            if markdown:
-                l = re.sub('</p><p>','\n',l)
-                l = re.sub('</?p>','',l)
-                text = text + markdown.markdown(l)
-            else:
-                text = text + cleanText(l, False)
+            text = text + cleanText(l, False)
 
         elif tag == '<split/>':
             # splitting image table by terminating gallery
