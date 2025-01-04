@@ -248,6 +248,7 @@ Dans le fichier [logbook.css](logbook.css)
 
 # Samples - Echantillons
 
+* [Geocaching USA 2012](http://www.garenkreiz.net/Geocaching-Journal/logbook_USA_2012.html)
 * [Geocaching journal 2001-2010](http://www.garenkreiz.net/Geocaching-Journal/Journal_2001-2010.html)
 * [Geocaching journal 2011-2016](http://www.garenkreiz.net/Geocaching-Journal/Journal_2011-2016.html)
 * [Cache journal "Following the furrow"](http://www.garenkreiz.net/Geocaching-Journal/Journal_Following_the_furrow_202404.html)
