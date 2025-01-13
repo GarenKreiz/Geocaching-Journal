@@ -67,7 +67,7 @@ class Logbook(object):
 
     def __init__(self,
                  fNameInput, fNameOutput="logbook.xml",
-                 verbose=True, startDate=None, endDate=None, refresh=False, excluded=[],
+                 verbose=True, startDate=None, endDate=None, refresh=False, excluded=[], included=[],
                  user = None, password = None):
         self.fNameInput = fNameInput
         self.fNameOutput = fNameOutput
@@ -77,6 +77,7 @@ class Logbook(object):
         self.endDate = endDate
         self.refresh = refresh
         self.excluded = excluded
+        self.included = included
 
         self.nDates = 0          # number of processed dates
         self.nLogs = 0           # number of processed logs
@@ -321,12 +322,19 @@ class Logbook(object):
             if (typeCache):
                 typeLog += ' [%s]'%typeCache
             # keeping the logs that are not excluded by -x option
-            #keep = (True if typeLog.lower() in [item.lower() for item in self.excluded] else False)
-            #test short string research exclude - ex : -x Write for Write note or -x Found for Found it - etc.
-            keepLog = (False if len([excluded for excluded in self.excluded if excluded.lower() in typeLog.lower()]) else True)
+            # ex : -x Write for Write note or -x Found for Found it - etc.
+            keepLog = True
+            if self.excluded:
+                keepLog = (False if len([excluded for excluded in self.excluded if excluded.lower() in typeLog.lower()]) else True)
+            # keeping the logs that are included by -i option
+            # ex: -i favorite for favorited caches
+            logKeep = True
+            if self.included:
+                logKeep = (True if len([included for included in self.included if included.lower() in typeLog.lower()]) else False)
+
             # Filter a specific cache using its title
             #keepLog = re.search("ombre de la merveille",titleCache)
-            if keepLog and idLog != '':
+            if keepLog and logKeep and idLog != '':
                 try:
                     days[dateLog].append((idLog, idCache, titleCache, typeLog, natureLog, textLog, imagesList))
                 except KeyError:
@@ -428,15 +436,18 @@ if __name__ == '__main__':
         print('       authenticate to www.geocaching.com to access the log pages')
         print('       authentification sur le site geocaching pour pouvoir consulter les logs')
         print('   -x|--exclude pattern')
-        print('       exclude log whose type matches pattern, can be repeated (-x Write, -x Maintenance, -x Coords...)')
+        print('       exclude logs whose type matches pattern, can be repeated (-x Write, -x Maintenance, -x Coords...)')
         print('       exclut les logs contenant un pattern, répétition possible (-x Write, -x Maintenance, -x Coord...)')
+        print('   -i|--include pattern')
+        print('       include logs whose type matches pattern, can be repeated (-i favorite...)')
+        print('       inclut les logs contenant un pattern, répétition possible (-i favorite...)')
 
         sys.exit()
 
     import getopt
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "hcrqs:e:x:u:", ['help', 'cache', 'refresh', 'quiet', 'start', 'end', 'exclude', 'user'])
+        opts, args = getopt.getopt(sys.argv[1:], "hcrqs:e:x:i:u:", ['help', 'cache', 'refresh', 'quiet', 'start', 'end', 'exclude', 'include', 'user'])
     except getopt.GetoptError:
         usage()
 
@@ -445,6 +456,7 @@ if __name__ == '__main__':
     endDate = None
     refresh = False
     excluded = []
+    included = []
     user = None
     password = None
     
@@ -469,6 +481,8 @@ if __name__ == '__main__':
             endDate = arg
         elif opt == "-x":
             excluded.append(arg)
+        elif opt == "-i":
+            included.append(arg)
         elif opt == "-u":
             credentials = arg.split('/')
             if len(credentials) != 2:
@@ -479,6 +493,7 @@ if __name__ == '__main__':
             password = credentials[1]
 
     print("Excluded:", excluded)
+    print("Included:", included)
 
     # use ~/.georc from geo-* to store USERNAME and PASSWORD (double quoted)
     if not user and os.path.isfile(os.path.expanduser('~/.georc')):
@@ -498,7 +513,7 @@ if __name__ == '__main__':
 
         # first phase : from Groundspeak HTML to XML
         if re.search(".htm[l]*", args[0], re.IGNORECASE):
-            Logbook(args[0], xmlFile, verbose, startDate, endDate, refresh, excluded, user, password).processLogs()
+            Logbook(args[0], xmlFile, verbose, startDate, endDate, refresh, excluded, included, user, password).processLogs()
 
         # second phase : from XML to generated HTML
         if re.search(".htm[l]*", args[1], re.IGNORECASE):
