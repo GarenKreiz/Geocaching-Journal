@@ -157,12 +157,6 @@ class Logbook(object):
                 return
         else:
             with codecs.open(dirLog+idLog, 'r', 'utf-8') as fr:
-                if self.verbose:
-                    try:
-                        print("Processing cache " + titleCache)
-                    except:
-                        print("Error")
-                        print("Processing cache %r"%titleCache.encode('utf-8'))
                 dataLog = fr.read()
         return self.parseLog(dataLog, dateLog, idLog, idCache, titleCache, typeLog, natureLog)
     
