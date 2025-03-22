@@ -173,7 +173,7 @@ class Logbook(object):
 
         if natureLog == 'T' and 'cache_details.aspx' in dataLog:
             # adding the name of the cache where the trackable is, if present in the log
-            titleTb = re.search('cache_details.aspx\?guid=([^>]*)">(.*?)</a>', dataLog, re.S).group(2)
+            titleTb = re.search('cache_details.aspx\\?guid=([^>]*)">(.*?)</a>', dataLog, re.S).group(2)
             titleCache = titleCache + ' @ ' + titleTb
 
         if '_LogText">' in dataLog:
@@ -295,7 +295,7 @@ class Logbook(object):
                     break
                 textLog = divs.group(5)
                 textLog = re.sub('<div class="log-cta">.*','',textLog)      # clean text
-                imgs = re.finditer('"(https:\/\/img.geocaching.com[^"]*)".*?quot;> *(.*?) *</span',textLog,re.S)
+                imgs = re.finditer('"(https://img.geocaching.com[^"]*)".*?quot;> *(.*?) *</span',textLog,re.S)
                 textLog = re.sub('</div> *<div class="TableLogContent">.*','',textLog)
                 dateLog = self.__normalizeDate(divs.group(4))
                 typeLog = divs.group(3)
