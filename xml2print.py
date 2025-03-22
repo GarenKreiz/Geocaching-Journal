@@ -250,9 +250,9 @@ def safeString(s):
     """
     process single and double quotes
     """
-    s = re.sub('\'','\&apos;',s)
-    s = re.sub('&#39;','\&apos;',s)
-    return re.sub('\"','\&quot;',s)
+    s = re.sub('\'','&apos;',s)
+    s = re.sub('&#39;','&apos;',s)
+    return re.sub('\"','&quot;',s)
 
 
 def cleanText(textInput, allTags=True):
@@ -487,9 +487,9 @@ def xml2print(xmlInput, htmlOutput, printing=False, groupPanoramas=False, compac
             post = cleanText(l)
             if verbose:
                 try:
-                    print('Post:', re.sub('\|.*', '', post))
+                    print('Post:', re.sub('\\|.*', '', post))
                 except:
-                    print('Post:', (re.sub('\|.*', '', post)).encode('utf-8'))
+                    print('Post:', (re.sub('\\|.*', '', post)).encode('utf-8'))
 
             # <post>left title|left url|right title|right url</post>
             elements = post.split('|')
@@ -504,8 +504,8 @@ def xml2print(xmlInput, htmlOutput, printing=False, groupPanoramas=False, compac
                     log = elements[2].strip()
                     if 'geocaching' in currentURL:
                         favorite = ''
-                        types = re.search('([^\[]*)(\[[^\[]*\])?$', log)
-                        typeCache = re.sub('[\[\]]','',types.group(2)) if types.group(2) else ''
+                        types = re.search('([^\\[]*)(\\[[^\\[]*\\])?$', log)
+                        typeCache = re.sub('[\\[\\]]','',types.group(2)) if types.group(2) else ''
                         typeLog = types.group(1).strip()
                         if icons and typeLog and typeLog in typeIcons.keys():
                             post = iconBadgeTemplate%typeIcons[typeLog] + post
