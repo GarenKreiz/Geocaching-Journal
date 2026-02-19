@@ -448,7 +448,6 @@ def xml2print(xmlInput, htmlOutput, printing=False, groupPanoramas=False, compac
                 # the title has 2 parts : a text | an URL
                 titleText = '<a href="%s" target="_blank">%s</a>' % (title[1], title[0])
             else:
-                fOut.write('<title>%s</title>\n' % cleanText(l, True))
                 titleText = title[0]
             fOut.write(headerPopup)
             fOut.write(headerMiddle % titleText)
