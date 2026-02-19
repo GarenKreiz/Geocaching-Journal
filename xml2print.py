@@ -503,7 +503,7 @@ def xml2print(xmlInput, htmlOutput, printing=False, groupPanoramas=False, compac
                     log = elements[2].strip()
                     if 'geocaching' in currentURL:
                         favorite = ''
-                        types = re.search('([^\\[]*)(\\[[^\\[]*\\])?$', log)
+                        types = re.search('^([^\\[]*).*(\\[[^\\[]*\\])$', log)
                         typeCache = re.sub('[\\[\\]]','',types.group(2)) if types.group(2) else ''
                         typeLog = types.group(1).strip()
                         if icons and typeLog and typeLog in typeIcons.keys():
