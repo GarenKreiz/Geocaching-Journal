@@ -429,7 +429,7 @@ def xml2print(xmlInput, htmlOutput, printing=False, groupPanoramas=False, compac
                 print('!!!!!!!!!!!!! Bad image format:', line)
             try:
                 allPictures[image].append((comment,currentLocation,currentURL,currentAdditionalURL,elements[0]))
-                print("Image en double :", image, currentLocaltion, currentURL)
+                print("Image en double :", image, currentLocation, currentURL)
             except:
                 allPictures[image] = [(comment,currentLocation,currentURL,currentAdditionalURL,elements[0])]
             if tag == '<pano>':
