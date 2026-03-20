@@ -82,11 +82,11 @@ pictureFormatTemplate = """
 </tbody></table>
 """
 
-# file from http://www.geocaching.com/app/ui-icons/sprites/cache-types.svg (Copyright Groundspeak)
+# file from https://www.geocaching.com/app/ui-icons/sprites/cache-types.svg (Copyright Groundspeak)
 iconBadgeTemplate = '<svg class="post-badge"><use xlink:href="./cache-types.svg#icon-%s" /></svg>'
 iconPostTemplate = '<svg class="post-icon"><use xlink:href="./cache-types.svg#icon-%d" /></svg>'
 
-# file from http://www.geocaching.com/images/icons/fave_fill_16.svg (Copyright Groundspeak)
+# file from https://www.geocaching.com/images/icons/fave_fill_16.svg (Copyright Groundspeak)
 iconFavoriteTemplate = '<svg width="16px" height="16px"><image xlink:href="./fave_fill_16.svg" /></svg>'
 
 headerMosaic = """
@@ -516,8 +516,12 @@ def xml2print(xmlInput, htmlOutput, printing=False, groupPanoramas=False, compac
                         log = favorite + log
                     post = '<div class="alignleft">' + post + '</div>'
                     if len(elements) > 3:
+                        logid = ''
+                        logid = re.sub('.*/log/(.*)$', '\\1', elements[3])
                         log = '<a href="' + elements[3] + '" target="_blank">' + log + '</a>'
                         currentAdditionalURL = elements[3]
+                        if logid:
+                            log = '<div id="%s">'%logid + log + '</div>'
                     log = '<div class="alignright">' + log + '</div>'
                 post = '<a href="' + elements[1] + '" target="_blank">' + post + '</a>' + log
             else:
