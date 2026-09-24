@@ -285,6 +285,11 @@ class Logbook(object):
         for tr in listTr:
             td = re.finditer('<td[^>]*>(.*?)</td>', tr, re.S)
             listTd = [result.group(1) for result in td]
+            actionsMenu = re.search('aspNet',listTd[1])
+            if actionsMenu:
+                # end of the list of logs of the page, the last line is a menu to navigate among pages
+                break
+
             imagesList = []
             if natureLog == 'C':
                 # TODO : detect images
