@@ -41,15 +41,15 @@ import urllib
 locale.setlocale(locale.LC_ALL, '')
 
 try:
-    import urllib2 as Request
-    from cookielib import CookieJar
-    Parse = urllib
-    version = 2
-except:
     import urllib.request as Request
     from http.cookiejar import CookieJar
     Parse = urllib.parse
     version = 3
+except ImportError:
+    import urllib2 as Request
+    from cookielib import CookieJar
+    Parse = urllib
+    version = 2
 
 # default title and description of the logbook (should be in logbook_header.xml)
 bookTitle = u"""<title>Titre à parametrer<br/> Customizable title</title>"""
