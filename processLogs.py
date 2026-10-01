@@ -82,12 +82,15 @@ class Logbook(object):
         self.nDates = 0          # number of processed dates
         self.nLogs = 0           # number of processed logs
 
+        self.days = {}           # dictionary of logs by date
+        self.processedLogs = []  # list of processed logs to avoid duplicates
+
         self.urlOpener = None
 
         self.user = user
         self.password = password
         print("User: ", user)
-        
+
     def login(self):
 
         if self.urlOpener:
@@ -105,7 +108,7 @@ class Logbook(object):
             ('User-agent', ('Mozilla/4.0 (compatible; MSIE 6.0; '
                             'Windows NT 5.2; .NET CLR 1.1.4322)'))
             ]
-        
+
         response = self.urlOpener.open('https://www.geocaching.com/account/signin')
         data = response.read().decode('utf8')
         f = codecs.open("geocaching_signin.html", "w", "utf-8")
@@ -122,11 +125,10 @@ class Logbook(object):
         login_data = Parse.urlencode(form).encode('utf-8')
 
         r2 = self.urlOpener.open('https://www.geocaching.com/account/signin', login_data)
-        
+
         f = codecs.open("geocaching_login.html", "w", "utf-8")
         f.write(r2.read().decode('utf-8'))
         f.close()
-        
 
     def getLog(self, dateLog, idLog, idCache, titleCache, typeLog, natureLog):
         dirLog = Logbook.dirLog[natureLog] + '/_%s_/'%idLog[-1]
@@ -160,11 +162,10 @@ class Logbook(object):
             with codecs.open(dirLog+idLog, 'r', 'utf-8') as fr:
                 dataLog = fr.read()
         return self.parseLog(dataLog, dateLog, idLog, idCache, titleCache, typeLog, natureLog)
-    
 
     def parseLog(self, dataLog, dateLog, idLog, idCache, titleCache, typeLog, natureLog):
         """
-        analyses the HTML content of a log page
+        analyses the HtML content of a log page from the geocaching.com web site
         """
 
         text = ''
@@ -218,7 +219,7 @@ class Logbook(object):
 
     def outputLog(self, dateLog, idLog, idCache, titleCache, typeLog, natureLog, textLog, listeImages):
         """
-        analyses the HTML content of a log page
+        write an entry in the XML file for a log, with the text and the list of images
         """
 
         self.fXML.write('<post>%s | https://www.geocaching.com/%s%s |'%(titleCache, Logbook.urls[natureLog], idCache))
@@ -238,10 +239,47 @@ class Logbook(object):
             if typeImage == 'pano':
                 img = re.sub('/display/', '/', img)
             self.fXML.write("<%s>%s<height>480</height><width>640</width><comment>%s</comment></%s>\n"%(typeImage, img, caption, typeImage))
-    
+
     # images with "panorama" or "panoramique" in the caption are supposed to be wide pictures
     def __isPanorama(self, title):
         return (True if re.search('panoram', title, re.IGNORECASE) else False)
+
+    def parseLogbook(self, logbookFile):
+        """
+        analyses the XML content of a previously generated log file
+        """
+
+        with codecs.open(logbookFile, 'r', 'utf-8') as fIn:
+            logbookData = fIn.readline()
+            post = None
+            idLog, idCache, titleCache, typeLog, natureLog, textLog, imagesList = None, None, None, None, None, None, []
+            natureLog = 'L'
+            while logbookData:
+                logbookData = fIn.readline()
+                if re.search('<(post|date)>', logbookData) and idLog:
+                    print("Appending log %s %s %s"%(idLog, dateLog, titleCache))
+                    try:
+                        self.days[dateLog].append((idLog, idCache, titleCache, typeLog, natureLog, textLog, imagesList))
+                    except KeyError:
+                        self.days[dateLog] = [(idLog, idCache, titleCache, typeLog, natureLog, textLog, imagesList)]
+                    self.processedLogs.append(idLog)
+                    idLog = None
+                if logbookData.find('<date>') > -1:
+                    dateLog = re.search('<date>(.*)</date>', logbookData).group(1)
+                    dateLog = self.__parseDate(dateLog)
+                elif logbookData.find('<post>') > -1:
+                    post = re.search('<post>(.*) \\| .*geocache/(.*) \\|(.*\\]) \\| .*live/log/(.*)</post>', logbookData)
+                    (titleCache, idCache, typeLog, idLog) = post.groups()
+                    imagesList = []
+                elif logbookData.find('<text>') > -1:
+                    textLog = re.search('<text><p>(.*)</p></text>', logbookData).group(1)
+                elif logbookData.find('<image>') > -1:
+                    (image, comment) = re.search('<image>(.*)<height>.*</width><comment>(.*)</comment></image>', logbookData, re.S).groups()
+                    imagesList.append((image, comment, self.__isPanorama(comment)))
+                elif logbookData.find('<pano>') > -1:
+                    (image, comment) = re.search('<pano>(.*)<height>.*</width><comment>(.*)</comment></pano>', logbookData, re.S).groups()
+                    imagesList.append((image, comment, self.__isPanorama(comment)))
+        return
 
     def processLogs(self):
         """
@@ -255,7 +293,6 @@ class Logbook(object):
             shutil.copy(os.path.join(os.path.dirname(sys.argv[0]), headerFile), '.')
 
         allLogs = 0
-        days = {}
 
         idLog = None
         with codecs.open(self.fNameInput, 'r', 'utf-8') as fIn:
@@ -323,6 +360,8 @@ class Logbook(object):
                 typeCache = re.search('title="([^"]*)"', listTd[3]).group(1)
                 idLog = re.search('live/log/(.*?)" target', listTd[5]).group(1)
                 titleCache = re.search('</a> <a(.*)?\">(.*)</a>', listTd[3]).group(2).replace('</span>', '')
+            if idLog in self.processedLogs:
+                continue
             allLogs += 1
             if (typeCache):
                 typeLog += ' [%s]'%typeCache
@@ -341,15 +380,15 @@ class Logbook(object):
             #keepLog = re.search("ombre de la merveille",titleCache)
             if keepLog and logKeep and idLog != '':
                 try:
-                    days[dateLog].append((idLog, idCache, titleCache, typeLog, natureLog, textLog, imagesList))
+                    self.days[dateLog].append((idLog, idCache, titleCache, typeLog, natureLog, textLog, imagesList))
                 except KeyError:
-                    days[dateLog] = [(idLog, idCache, titleCache, typeLog, natureLog, textLog, imagesList)]
+                    self.days[dateLog] = [(idLog, idCache, titleCache, typeLog, natureLog, textLog, imagesList)]
                 if self.verbose:
                     try:
                         print("%s|%s|%s|%s|%s|%s"%(idLog, dateLog, idCache, titleCache, typeLog, natureLog))
                     except:
                         print("%s|%s|%s|%s|%s|%s"%(idLog, dateLog, idCache, titleCache.encode('utf-8'), typeLog, natureLog))
-        dates = sorted(days)
+        dates = sorted(self.days)
         for dateLog in dates:
             # check if date is in the correct interval
             if self.startDate and dateLog < self.startDate:
@@ -359,7 +398,7 @@ class Logbook(object):
             self.nDates += 1
             self.fXML.write('<date>%s</date>\n'%self.__formatDate(dateLog))
 
-            dayLogs = days[dateLog]
+            dayLogs = self.days[dateLog]
             dayLogs.reverse()
             for (idLog, idCache, titleCache, typeLog, natureLog, textLog, imagesList) in dayLogs:
                 self.nLogs += 1
@@ -374,7 +413,6 @@ class Logbook(object):
         self.fXML.close()
         print('Logs: ', self.nLogs, '/', allLogs, 'Days:', self.nDates, '/', len(dates))
         print('Result file:', self.fNameOutput)
-
 
     def __formatDate(self, date):
         """
@@ -391,9 +429,22 @@ class Logbook(object):
         date = re.sub(' 0', ' ', date).capitalize()
         return date
 
+    def __parseDate(self, date):
+        """
+        parse date to YYYY/MM/DD form
+        """
+
+        if (date.find('[0-9/[0-9][0-9]/[0-9]') == -1):
+            try:
+                t = int(time.mktime(time.strptime(date, "%A %d %B %Y")))
+                date = time.strftime('%Y/%m/%d', time.localtime(t))
+            except:
+                pass
+        return date
+
     def __normalizeDate(self, date):
         """
-        mormalize date in YYYY/MM/DD form
+        normalize date in YYYY/MM/DD form
         """
 
         date = re.sub('[-. ]+', '/', date)
@@ -409,6 +460,7 @@ class Logbook(object):
             d, y = y, int(d)+2000
         date = '%02d/%02d/%02d'%(int(y), int(m), int(d))
         return date
+
 
 if __name__ == '__main__':
     def usage():
@@ -446,13 +498,16 @@ if __name__ == '__main__':
         print('   -i|--include pattern')
         print('       include logs whose type matches pattern, can be repeated (-i favorite...)')
         print('       inclut les logs contenant un pattern, répétition possible (-i favorite...)')
+        print('   -a|--append logfile.xml')
+        print('       append the logs to an existing logfile.xml, create a new one')
+        print('   -h|--help')
 
         sys.exit()
 
     import getopt
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "hcrqs:e:x:i:u:", ['help', 'cache', 'refresh', 'quiet', 'start', 'end', 'exclude', 'include', 'user'])
+        opts, args = getopt.getopt(sys.argv[1:], "hcrqs:e:x:i:u:a:", ['help', 'cache', 'refresh', 'quiet', 'start', 'end', 'exclude', 'include', 'user'])
     except getopt.GetoptError:
         usage()
 
@@ -464,7 +519,8 @@ if __name__ == '__main__':
     included = []
     user = None
     password = None
-    
+    appendFile = None
+
     for opt, arg in opts:
         if opt == '-h':
             usage()
@@ -496,6 +552,8 @@ if __name__ == '__main__':
                 sys.exit(1)
             user = credentials[0]
             password = credentials[1]
+        elif opt == "-a":
+            appendFile = arg
 
     print("Excluded:", excluded)
     print("Included:", included)
@@ -518,7 +576,15 @@ if __name__ == '__main__':
 
         # first phase : from Groundspeak HTML to XML
         if re.search(".htm[l]*", args[0], re.IGNORECASE):
-            Logbook(args[0], xmlFile, verbose, startDate, endDate, refresh, excluded, included, user, password).processLogs()
+            logbook =Logbook(args[0], xmlFile, verbose, startDate, endDate, refresh, excluded, included, user, password)
+
+            # optional phase : read previous logbook to add old logs
+            if appendFile:
+                if os.path.isfile(appendFile):
+                    print("Appending logs to existing file %s"%appendFile)
+                    logbook.parseLogbook(appendFile)
+
+            logbook.processLogs()
 
         # second phase : from XML to generated HTML
         if re.search(".htm[l]*", args[1], re.IGNORECASE):
