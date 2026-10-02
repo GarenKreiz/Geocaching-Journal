@@ -81,6 +81,7 @@ class Logbook(object):
 
         self.nDates = 0          # number of processed dates
         self.nLogs = 0           # number of processed logs
+        self.allLogs = 0
 
         self.days = {}           # dictionary of logs by date
         self.processedLogs = []  # list of processed logs to avoid duplicates
@@ -180,9 +181,12 @@ class Logbook(object):
         if '_LogText">' in dataLog:
             text = re.search('_LogText">(.*?)</span>', dataLog, re.S).group(1)
             text = re.sub('src="/images/', 'src="https://www.geocaching.com/images/', text)
+            text = re.sub('(\n|\r)', '', text)
         elif 'logText' in dataLog:
             jsonData = json.loads(dataLog)
             text=jsonData['props']['pageProps']['logText']
+            text = re.sub('\n', '</p><p>', text)
+            text = re.sub('\r', '', text)
         else:
             print("!!!! Log unavailable", idLog)
         if 'LogBookPanel1_GalleryList' in dataLog: #if Additional images
@@ -244,6 +248,28 @@ class Logbook(object):
     def __isPanorama(self, title):
         return (True if re.search('panoram', title, re.IGNORECASE) else False)
 
+    def __keepLog(self, typeLog, dateLog):
+        """
+        check if the log type is in the list of excluded or included logs
+        """
+        keepLog = True
+
+        # keeping the logs that are not excluded by -x option
+        # ex : -x Write for Write note or -x Found for Found it - etc.
+        if self.excluded:
+            keepLog = keepLog and (False if len([excluded for excluded in self.excluded if excluded.lower() in typeLog.lower()]) else True)
+
+        # keeping the logs that are included by -i option
+        # ex: -i favorite for favorited caches
+        if self.included:
+            keepLog = keepLog and (True if len([included for included in self.included if included.lower() in typeLog.lower()]) else False)
+
+        # check if date is in the correct interval
+        keepLog = keepLog and (not self.startDate or dateLog >= self.startDate)
+        keepLog = keepLog and (not self.endDate or dateLog <= self.endDate)
+
+        return keepLog
+
     def parseLogbook(self, logbookFile):
         """
         analyses the XML content of a previously generated log file
@@ -257,11 +283,12 @@ class Logbook(object):
             while logbookData:
                 logbookData = fIn.readline()
                 if re.search('<(post|date)>', logbookData) and idLog:
-                    print("Appending log %s %s %s"%(idLog, dateLog, titleCache))
-                    try:
-                        self.days[dateLog].append((idLog, idCache, titleCache, typeLog, natureLog, textLog, imagesList))
-                    except KeyError:
-                        self.days[dateLog] = [(idLog, idCache, titleCache, typeLog, natureLog, textLog, imagesList)]
+                    self.allLogs += 1
+                    if self.__keepLog(typeLog, dateLog):
+                        try:
+                            self.days[dateLog].insert(0,(idLog, idCache, titleCache, typeLog, natureLog, textLog, imagesList))
+                        except KeyError:
+                            self.days[dateLog] = [(idLog, idCache, titleCache, typeLog, natureLog, textLog, imagesList)]
                     self.processedLogs.append(idLog)
                     idLog = None
                 if logbookData.find('<date>') > -1:
@@ -272,7 +299,10 @@ class Logbook(object):
                     (titleCache, idCache, typeLog, idLog) = post.groups()
                     imagesList = []
                 elif logbookData.find('<text>') > -1:
-                    textLog = re.search('<text><p>(.*)</p></text>', logbookData).group(1)
+                    try:
+                        textLog = re.search('<text><p>(.*)</p></text>', logbookData).group(1)
+                    except AttributeError:
+                        print ("!!! Error parsing text of log %s"%logbookData)
                 elif logbookData.find('<image>') > -1:
                     (image, comment) = re.search('<image>(.*)<height>.*</width><comment>(.*)</comment></image>', logbookData, re.S).groups()
                     imagesList.append((image, comment, self.__isPanorama(comment)))
@@ -291,8 +321,6 @@ class Logbook(object):
         headerFile = 'logbook_header.xml'
         if not os.path.exists(headerFile):
             shutil.copy(os.path.join(os.path.dirname(sys.argv[0]), headerFile), '.')
-
-        allLogs = 0
 
         idLog = None
         with codecs.open(self.fNameInput, 'r', 'utf-8') as fIn:
@@ -360,41 +388,30 @@ class Logbook(object):
                 typeCache = re.search('title="([^"]*)"', listTd[3]).group(1)
                 idLog = re.search('live/log/(.*?)" target', listTd[5]).group(1)
                 titleCache = re.search('</a> <a(.*)?\">(.*)</a>', listTd[3]).group(2).replace('</span>', '')
+
             if idLog in self.processedLogs:
                 continue
-            allLogs += 1
+
             if (typeCache):
                 typeLog += ' [%s]'%typeCache
-            # keeping the logs that are not excluded by -x option
-            # ex : -x Write for Write note or -x Found for Found it - etc.
-            keepLog = True
-            if self.excluded:
-                keepLog = (False if len([excluded for excluded in self.excluded if excluded.lower() in typeLog.lower()]) else True)
-            # keeping the logs that are included by -i option
-            # ex: -i favorite for favorited caches
-            logKeep = True
-            if self.included:
-                logKeep = (True if len([included for included in self.included if included.lower() in typeLog.lower()]) else False)
 
-            # Filter a specific cache using its title
-            #keepLog = re.search("ombre de la merveille",titleCache)
-            if keepLog and logKeep and idLog != '':
+            self.allLogs += 1
+
+            if not self.__keepLog(typeLog, dateLog) or not idLog:
+                continue
+
+            try:
+                self.days[dateLog].append((idLog, idCache, titleCache, typeLog, natureLog, textLog, imagesList))
+            except KeyError:
+                self.days[dateLog] = [(idLog, idCache, titleCache, typeLog, natureLog, textLog, imagesList)]
+            if self.verbose:
                 try:
-                    self.days[dateLog].append((idLog, idCache, titleCache, typeLog, natureLog, textLog, imagesList))
-                except KeyError:
-                    self.days[dateLog] = [(idLog, idCache, titleCache, typeLog, natureLog, textLog, imagesList)]
-                if self.verbose:
-                    try:
-                        print("%s|%s|%s|%s|%s|%s"%(idLog, dateLog, idCache, titleCache, typeLog, natureLog))
-                    except:
-                        print("%s|%s|%s|%s|%s|%s"%(idLog, dateLog, idCache, titleCache.encode('utf-8'), typeLog, natureLog))
+                    print("%s|%s|%s|%s|%s|%s"%(idLog, dateLog, idCache, titleCache, typeLog, natureLog))
+                except:
+                    print("%s|%s|%s|%s|%s|%s"%(idLog, dateLog, idCache, titleCache.encode('utf-8'), typeLog, natureLog))
+
         dates = sorted(self.days)
         for dateLog in dates:
-            # check if date is in the correct interval
-            if self.startDate and dateLog < self.startDate:
-                continue
-            if self.endDate and dateLog > self.endDate:
-                continue
             self.nDates += 1
             self.fXML.write('<date>%s</date>\n'%self.__formatDate(dateLog))
 
@@ -411,7 +428,7 @@ class Logbook(object):
         self.fXML.write('<date>Icons : Groundspeak (Copyright) | https://www.geocaching.com/about/logousage.aspx</date>\n')
         self.fXML.write('<date>Source : GarenKreiz/Geocaching-Journal @ GitHub (CC BY-NC 3.0 FR) | https://github.com/GarenKreiz/Geocaching-Journal</date>\n')
         self.fXML.close()
-        print('Logs: ', self.nLogs, '/', allLogs, 'Days:', self.nDates, '/', len(dates))
+        print('Logs: ', self.nLogs, '/', self.allLogs, 'Days:', self.nDates, '/', len(dates))
         print('Result file:', self.fNameOutput)
 
     def __formatDate(self, date):
