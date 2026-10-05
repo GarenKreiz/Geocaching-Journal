@@ -66,10 +66,10 @@ class Logbook(object):
     urls = { 'C': 'profile?guid=', 'L': 'geocache/', 'T': 'track/details.aspx?guid='}
 
     def __init__(self,
-                 fNameInput, fNameOutput="logbook.xml",
+                 fNameOutput="logbook.xml",
                  verbose=True, startDate=None, endDate=None, refresh=False, excluded=[], included=[],
                  user = None, password = None):
-        self.fNameInput = fNameInput
+
         self.fNameOutput = fNameOutput
         self.fXML = codecs.open(fNameOutput, "w", 'utf-8')
         self.verbose = verbose
@@ -162,9 +162,9 @@ class Logbook(object):
         else:
             with codecs.open(dirLog+idLog, 'r', 'utf-8') as fr:
                 dataLog = fr.read()
-        return self.parseLog(dataLog, dateLog, idLog, idCache, titleCache, typeLog, natureLog)
+        return self.parseLog(dataLog, dateLog, idLog, idCache, titleCache, typeLog)
 
-    def parseLog(self, dataLog, dateLog, idLog, idCache, titleCache, typeLog, natureLog):
+    def parseLog(self, dataLog, dateLog, idLog, idCache, titleCache, typeLog):
         """
         analyses the HtML content of a log page from the geocaching.com web site
         """
@@ -173,7 +173,7 @@ class Logbook(object):
         listeImages = []
         jsonData = {}
 
-        if natureLog == 'T' and 'cache_details.aspx' in dataLog:
+        if self.natureLog == 'T' and 'cache_details.aspx' in dataLog:
             # adding the name of the cache where the trackable is, if present in the log
             titleTb = re.search('cache_details.aspx\\?guid=([^>]*)">(.*?)</a>', dataLog, re.S).group(2)
             titleCache = titleCache + ' @ ' + titleTb
@@ -221,7 +221,7 @@ class Logbook(object):
 
         return (titleCache,text,listeImages)
 
-    def outputLog(self, dateLog, idLog, idCache, titleCache, typeLog, natureLog, textLog, listeImages):
+    def outputLog(self, dateLog, idLog, idCache, titleCache, typeLog, natureLog,textLog, listeImages):
         """
         write an entry in the XML file for a log, with the text and the list of images
         """
@@ -275,6 +275,8 @@ class Logbook(object):
         analyses the XML content of a previously generated log file
         """
 
+        self.natureLog = 'L' # default value, will be changed if the logbook is for caches or trackables
+
         with codecs.open(logbookFile, 'r', 'utf-8') as fIn:
             logbookData = fIn.readline()
             post = None
@@ -311,37 +313,20 @@ class Logbook(object):
                     imagesList.append((image, comment, self.__isPanorama(comment)))
         return
 
-    def processLogs(self):
+    def parseHTMLLogs(self, fHTML):
         """
         analyse of the HTML page with all the logs of the geocacher
         local dump of the web page https://www.geocaching.com/my/logs.aspx?s=1
         """
-        global bookTitle, bookDescription
-
-        headerFile = 'logbook_header.xml'
-        if not os.path.exists(headerFile):
-            shutil.copy(os.path.join(os.path.dirname(sys.argv[0]), headerFile), '.')
 
         idLog = None
-        with codecs.open(self.fNameInput, 'r', 'utf-8') as fIn:
+        with codecs.open(fHTML, 'r', 'utf-8') as fIn:
             cacheData = fIn.read()
 
-        # natureLog : C for caches, L for logs, T for trackables
-        natureLog = 'C' if re.search('cacheDetails',cacheData) else 'L' # T detected later
+        # self.natureLog : C for caches, L for logs, T for trackables
+        self.natureLog = 'C' if re.search('cacheDetails',cacheData) else 'L' # T detected later
 
-        if natureLog == 'C':
-            bookTitle = re.search('og:title" content="([^"]*)"',cacheData).group(1)
-            bookDescription = u"Journal des visites à la cache " + bookTitle
-            headerFile = None
-
-        try:
-            with codecs.open(headerFile, 'r', 'utf-8') as f:
-                self.fXML.write(f.read())
-        except:
-            self.fXML.write('<title>' + bookTitle + '</title>\n')
-            self.fXML.write('<description>' + bookDescription + '</description>\n')
-
-        if natureLog == 'C':
+        if self.natureLog == 'C':
             tagTable = re.search('<table id="cache_logs_table"[^>]*>(.*)</table>', cacheData, re.S|re.M).group(1)
         else:
             tagTable = re.search('<table class="Table">(.*)</table>', cacheData, re.S|re.M).group(1)
@@ -356,7 +341,7 @@ class Logbook(object):
                 break
 
             imagesList = []
-            if natureLog == 'C':
+            if self.natureLog == 'C':
                 # TODO : detect images
                 if  len(listTd) == 0:
                     break
@@ -380,8 +365,8 @@ class Logbook(object):
                 typeLog = re.search('title="([^"]*)".*>', listTd[0]).group(1)
                 if re.search('Favorited',listTd[1]):
                     typeLog = typeLog + ' [favorite]'
-                natureLog = ('L' if listTd[3].find('geocache') > 1 else 'T') # C for Cache and T for trackable
-                if natureLog == 'L':
+                self.natureLog = ('L' if listTd[3].find('geocache') > 1 else 'T') # C for Cache and T for trackable
+                if self.natureLog == 'L':
                     idCache = re.search('geocache/(.*?)"', listTd[3]).group(1)
                 else:
                     idCache = re.search('TB=(.*?)"', listTd[3]).group(1)
@@ -401,14 +386,37 @@ class Logbook(object):
                 continue
 
             try:
-                self.days[dateLog].append((idLog, idCache, titleCache, typeLog, natureLog, textLog, imagesList))
+                self.days[dateLog].append((idLog, idCache, titleCache, typeLog, self.natureLog, textLog, imagesList))
             except KeyError:
-                self.days[dateLog] = [(idLog, idCache, titleCache, typeLog, natureLog, textLog, imagesList)]
+                self.days[dateLog] = [(idLog, idCache, titleCache, typeLog, self.natureLog, textLog, imagesList)]
             if self.verbose:
                 try:
-                    print("%s|%s|%s|%s|%s|%s"%(idLog, dateLog, idCache, titleCache, typeLog, natureLog))
+                    print("%s|%s|%s|%s|%s|%s"%(idLog, dateLog, idCache, titleCache, typeLog, self.natureLog))
                 except:
-                    print("%s|%s|%s|%s|%s|%s"%(idLog, dateLog, idCache, titleCache.encode('utf-8'), typeLog, natureLog))
+                    print("%s|%s|%s|%s|%s|%s"%(idLog, dateLog, idCache, titleCache.encode('utf-8'), typeLog, self.natureLog))
+
+    def generateLogbook(self):
+        """
+        generate the XML file with all the logs, sorted by date
+        """
+
+        global bookTitle, bookDescription
+
+        headerFile = 'logbook_header.xml'
+        if not os.path.exists(headerFile):
+            shutil.copy(os.path.join(os.path.dirname(sys.argv[0]), headerFile), '.')
+
+        if self.natureLog == 'C':
+            bookTitle = re.search('og:title" content="([^"]*)"',cacheData).group(1)
+            bookDescription = u"Journal des visites à la cache " + bookTitle
+            headerFile = None
+
+        try:
+            with codecs.open(headerFile, 'r', 'utf-8') as f:
+                self.fXML.write(f.read())
+        except:
+            self.fXML.write('<title>' + bookTitle + '</title>\n')
+            self.fXML.write('<description>' + bookDescription + '</description>\n')
 
         dates = sorted(self.days)
         for dateLog in dates:
@@ -584,25 +592,27 @@ if __name__ == '__main__':
                 if l.find('PASSWORD=') == 0:
                     password = re.sub('PASSWORD="(.*)".*','\\1',l.strip())
     if len(args) == 2:
-        if re.search(".xml", args[0], re.IGNORECASE):
-            xmlFile = args[0]
-        elif re.search(".xml", args[1], re.IGNORECASE):
+
+        xmlFile = "logbook.xml"
+        if re.search(".xml", args[1], re.IGNORECASE):
             xmlFile = args[1]
-        else:
-            xmlFile = "logbook.xml"
 
-        # first phase : from Groundspeak HTML to XML
+        logbook =Logbook(xmlFile, verbose, startDate, endDate, refresh, excluded, included, user, password)
+        
+        # optional phase : read previous logbook to add old logs
+        if appendFile:
+            if os.path.isfile(appendFile):
+                print("Logs from existing file %s"%appendFile)
+                logbook.parseLogbook(appendFile)
+
+        # first phase : concatenate all logs in XML format, with filtering
         if re.search(".htm[l]*", args[0], re.IGNORECASE):
-            logbook =Logbook(args[0], xmlFile, verbose, startDate, endDate, refresh, excluded, included, user, password)
+            logbook.parseHTMLLogs(args[0])
+        elif re.search(".xml", args[0], re.IGNORECASE):
+            logbook.parseLogbook(args[0])
 
-            # optional phase : read previous logbook to add old logs
-            if appendFile:
-                if os.path.isfile(appendFile):
-                    print("Appending logs to existing file %s"%appendFile)
-                    logbook.parseLogbook(appendFile)
-
-            logbook.processLogs()
-
+        logbook.generateLogbook()
+    
         # second phase : from XML to generated HTML
         if re.search(".htm[l]*", args[1], re.IGNORECASE):
             import xml2print
