@@ -66,12 +66,9 @@ class Logbook(object):
     urls = { 'C': 'profile?guid=', 'L': 'geocache/', 'T': 'track/details.aspx?guid='}
 
     def __init__(self,
-                 fNameOutput="logbook.xml",
                  verbose=True, startDate=None, endDate=None, refresh=False, excluded=[], included=[],
                  user = None, password = None):
 
-        self.fNameOutput = fNameOutput
-        self.fXML = codecs.open(fNameOutput, "w", 'utf-8')
         self.verbose = verbose
         self.startDate = startDate
         self.endDate = endDate
@@ -395,12 +392,14 @@ class Logbook(object):
                 except:
                     print("%s|%s|%s|%s|%s|%s"%(idLog, dateLog, idCache, titleCache.encode('utf-8'), typeLog, self.natureLog))
 
-    def generateLogbook(self):
+    def generateLogbook(self, fNameOutput="logbook.xml"):
         """
         generate the XML file with all the logs, sorted by date
         """
 
         global bookTitle, bookDescription
+
+        self.fXML = codecs.open(fNameOutput, "w", 'utf-8')
 
         headerFile = 'logbook_header.xml'
         if not os.path.exists(headerFile):
@@ -437,7 +436,7 @@ class Logbook(object):
         self.fXML.write('<date>Source : GarenKreiz/Geocaching-Journal @ GitHub (CC BY-NC 3.0 FR) | https://github.com/GarenKreiz/Geocaching-Journal</date>\n')
         self.fXML.close()
         print('Logs: ', self.nLogs, '/', self.allLogs, 'Days:', self.nDates, '/', len(dates))
-        print('Result file:', self.fNameOutput)
+        print('Result file:', fNameOutput)
 
     def __formatDate(self, date):
         """
@@ -597,7 +596,7 @@ if __name__ == '__main__':
         if re.search(".xml", args[1], re.IGNORECASE):
             xmlFile = args[1]
 
-        logbook =Logbook(xmlFile, verbose, startDate, endDate, refresh, excluded, included, user, password)
+        logbook =Logbook(verbose, startDate, endDate, refresh, excluded, included, user, password)
         
         # optional phase : read previous logbook to add old logs
         if appendFile:
@@ -611,7 +610,7 @@ if __name__ == '__main__':
         elif re.search(".xml", args[0], re.IGNORECASE):
             logbook.parseLogbook(args[0])
 
-        logbook.generateLogbook()
+        logbook.generateLogbook(xmlFile)
     
         # second phase : from XML to generated HTML
         if re.search(".htm[l]*", args[1], re.IGNORECASE):
