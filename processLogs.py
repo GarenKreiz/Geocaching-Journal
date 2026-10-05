@@ -66,10 +66,11 @@ class Logbook(object):
     urls = { 'C': 'profile?guid=', 'L': 'geocache/', 'T': 'track/details.aspx?guid='}
 
     def __init__(self,
-                 verbose=True, startDate=None, endDate=None, refresh=False, excluded=[], included=[],
+                 verbose=True, warnings=False, startDate=None, endDate=None, refresh=False, excluded=[], included=[],
                  user = None, password = None):
 
         self.verbose = verbose
+        self.warnings = warnings
         self.startDate = startDate
         self.endDate = endDate
         self.refresh = refresh
@@ -205,16 +206,8 @@ class Logbook(object):
                 panora = self.__isPanorama(image['name'])
                 url = re.sub('com/','com/log/display/',image['url'])
                 listeImages.append((url,image['name'],panora))
-        else:
-            try:
-                print('!!!! Log without image %s %s %s >>> %s'%(idLog, dateLog, titleCache, typeLog))
-            except:
-                # Encoding exception
-                try:
-                    print('!!!! Log without image %s %s %s >>> %s'%(idLog, dateLog, titleCache.encode('utf-8'), typeLog))
-                except:
-                    # Python 2 exception
-                    print(('!!!! Log without image %s %s %s >>> %s'%(idLog, dateLog, titleCache, typeLog)).encode('utf-8'))
+        elif self.warnings:
+            self.__noImageMessage(idLog, dateLog, titleCache, typeLog)
 
         return (titleCache,text,listeImages)
 
@@ -267,6 +260,21 @@ class Logbook(object):
 
         return keepLog
 
+    def __noImageMessage(self, idLog, dateLog, titleCache, typeLog):
+        """
+        display a message if a log has no image
+        """
+
+        try:
+            print('!!!! Log without image %s %s %s >>> %s'%(idLog, dateLog, titleCache, typeLog))
+        except:
+            # Encoding exception
+            try:
+                print('!!!! Log without image %s %s %s >>> %s'%(idLog, dateLog, titleCache.encode('utf-8'), typeLog))
+            except:
+                # Python 2 exception
+                print(('!!!! Log without image %s %s %s >>> %s'%(idLog, dateLog, titleCache, typeLog)).encode('utf-8'))
+
     def parseLogbook(self, logbookFile):
         """
         analyses the XML content of a previously generated log file
@@ -288,6 +296,7 @@ class Logbook(object):
                             self.days[dateLog].insert(0,(idLog, idCache, titleCache, typeLog, natureLog, textLog, imagesList))
                         except KeyError:
                             self.days[dateLog] = [(idLog, idCache, titleCache, typeLog, natureLog, textLog, imagesList)]
+                        if not imagesList and self.warnings: self.__noImageMessage(idLog, dateLog, titleCache, typeLog)
                     self.processedLogs.append(idLog)
                     idLog = None
                 if logbookData.find('<date>') > -1:
@@ -524,6 +533,8 @@ if __name__ == '__main__':
         print('       inclut les logs contenant un pattern, répétition possible (-i favorite...)')
         print('   -a|--append logfile.xml')
         print('       append the logs to an existing logfile.xml, create a new one')
+        print('   -w|--warnings')
+        print('       show warnings for logs without images')
         print('   -h|--help')
 
         sys.exit()
@@ -531,11 +542,12 @@ if __name__ == '__main__':
     import getopt
 
     try:
-        opts, args = getopt.getopt(sys.argv[1:], "hcrqs:e:x:i:u:a:", ['help', 'cache', 'refresh', 'quiet', 'start', 'end', 'exclude', 'include', 'user'])
+        opts, args = getopt.getopt(sys.argv[1:], "hcrqws:e:x:i:u:a:w", ['help', 'cache', 'refresh', 'quiet', 'warnings', 'start', 'end', 'exclude', 'include', 'user', 'append'])
     except getopt.GetoptError:
         usage()
 
     verbose = True
+    warnings = False
     startDate = None
     endDate = None
     refresh = False
@@ -545,11 +557,14 @@ if __name__ == '__main__':
     password = None
     appendFile = None
 
+
     for opt, arg in opts:
         if opt == '-h':
             usage()
         elif opt == "-q":
             verbose = False
+        elif opt == "-w":
+            warnings = True
         elif opt == "-r":
             refresh = True
         elif opt == "-s":
@@ -596,8 +611,8 @@ if __name__ == '__main__':
         if re.search(".xml", args[1], re.IGNORECASE):
             xmlFile = args[1]
 
-        logbook =Logbook(verbose, startDate, endDate, refresh, excluded, included, user, password)
-        
+        logbook = Logbook(verbose, warnings, startDate, endDate, refresh, excluded, included, user, password)
+
         # optional phase : read previous logbook to add old logs
         if appendFile:
             if os.path.isfile(appendFile):
@@ -611,7 +626,7 @@ if __name__ == '__main__':
             logbook.parseLogbook(args[0])
 
         logbook.generateLogbook(xmlFile)
-    
+
         # second phase : from XML to generated HTML
         if re.search(".htm[l]*", args[1], re.IGNORECASE):
             import xml2print
