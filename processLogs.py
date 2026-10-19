@@ -129,6 +129,74 @@ class Logbook(object):
         f.write(r2.read().decode('utf-8'))
         f.close()
 
+    def getAllLogs(self, natureLog='L', idTrackable=None):
+        """
+        get all logs for a geocacher from www.geocaching.com
+        """
+
+        tmpFileRoot = "geocaching_logs_tmp"
+
+        if natureLog == 'C':
+            url = 'https://www.geocaching.com/my/logs.aspx?s=1'
+        elif natureLog == 'L':
+            url = 'https://www.geocaching.com/my/logs.aspx?s=1'
+        else:
+            url = 'https://www.geocaching.com/track/details.aspx?guid=%s'%idTrackable
+
+        print("Fetching logs", url)
+        try:
+            import os.path
+            if True or not os.path.isfile(f"{tmpFileRoot}_1.html"):
+                self.login()
+                response = self.urlOpener.open(url)
+                dataLogs = response.read().decode('utf-8')
+
+                f = codecs.open(f"{tmpFileRoot}_1.html", "w", "utf-8")
+                f.write(dataLogs)
+                f.close()
+            else:
+                with codecs.open(f"{tmpFileRoot}_1.html", "r", "utf-8") as f:
+                    dataLogs = f.read()
+
+            viewstate = re.search('"__VIEWSTATE" value="([^"]*)"',dataLogs,re.S).group(1)
+            viewstateGenerator = re.search('"__VIEWSTATEGENERATOR" value="([^"]*)"',dataLogs,re.S).group(1)
+            logsNumber = re.search('<td class="PageBuilderWidget"><span>[^<]+<b>([0-9]+)</b>',dataLogs,re.S).group(1)
+            pagesNumber = (int(logsNumber) // 20) + 1
+            print ("Number of logs:", logsNumber, " pages:", pagesNumber)
+            self.parseHTMLLogs(f"{tmpFileRoot}_1.html")
+
+            for p in range(2, pagesNumber+1):
+                if not os.path.isfile(f"{tmpFileRoot}_{p}.html") or p % 10 == 1:
+                    print ("Fetching page %d of logs"%p)
+                    if p % 10 == 1:
+                        print ("Waiting 10 seconds to avoid being blocked by geocaching.com for too many requests")
+                        time.sleep(10)
+                        target = 'ctl00$ContentBody$pgrBottom$ctl06'
+                    else:
+                        target = 'ctl00$ContentBody$pgrTop$lbGoToPage_%d'%p
+                    form = { '__EVENTTARGET' : target,
+                            '__EVENTARGUMENT' : '',
+                            '__VIEWSTATE' : viewstate,
+                            '__VIEWSTATEGENERATOR' : viewstateGenerator
+                            }
+                    post_data = Parse.urlencode(form).encode('utf-8')
+
+                    response = self.urlOpener.open('https://www.geocaching.com/my/logs.aspx?s=1', post_data)
+
+                    dataLogs = response.read().decode('utf-8')
+                    f = codecs.open(f"{tmpFileRoot}_{p}.html", "w", "utf-8")
+                    f.write(dataLogs)
+                    f.close()
+                    viewstate = re.search('"__VIEWSTATE" value="([^"]*)"',dataLogs,re.S).group(1)
+                    time.sleep(6) # avoid being blocked by geocaching.com for too many requests
+                dateLog = self.parseHTMLLogs(f"{tmpFileRoot}_{p}.html")
+                if dateLog and self.startDate and dateLog < self.startDate:
+                    print("Logs are older than start date, stopping")
+                    break
+        except (Request.HTTPError, Request.URLError) as msg:
+            print("Error accessing logs", msg)
+            return
+
     def getLog(self, dateLog, idLog, idCache, titleCache, typeLog, natureLog):
         dirLog = Logbook.dirLog[natureLog] + '/_%s_/'%idLog[-1]
         if not os.path.isfile(dirLog+idLog) or self.refresh:
@@ -326,11 +394,16 @@ class Logbook(object):
         """
 
         idLog = None
+        dateLog = ""
+
         with codecs.open(fHTML, 'r', 'utf-8') as fIn:
             cacheData = fIn.read()
 
         # self.natureLog : C for caches, L for logs, T for trackables
         self.natureLog = 'C' if re.search('cacheDetails',cacheData) else 'L' # T detected later
+
+        if self.natureLog == 'C':
+            self.bookTitle = re.search('og:title" content="([^"]*)"',cacheData).group(1)
 
         if self.natureLog == 'C':
             tagTable = re.search('<table id="cache_logs_table"[^>]*>(.*)</table>', cacheData, re.S|re.M).group(1)
@@ -341,7 +414,7 @@ class Logbook(object):
         for tr in listTr:
             td = re.finditer('<td[^>]*>(.*?)</td>', tr, re.S)
             listTd = [result.group(1) for result in td]
-            actionsMenu = re.search('aspNet',listTd[1])
+            actionsMenu = re.search('doPostBack',listTd[1])
             if actionsMenu:
                 # end of the list of logs of the page, the last line is a menu to navigate among pages
                 break
@@ -400,6 +473,7 @@ class Logbook(object):
                     print("%s|%s|%s|%s|%s|%s"%(idLog, dateLog, idCache, titleCache, typeLog, self.natureLog))
                 except:
                     print("%s|%s|%s|%s|%s|%s"%(idLog, dateLog, idCache, titleCache.encode('utf-8'), typeLog, self.natureLog))
+        return dateLog
 
     def generateLogbook(self, fNameOutput="logbook.xml"):
         """
@@ -415,8 +489,7 @@ class Logbook(object):
             shutil.copy(os.path.join(os.path.dirname(sys.argv[0]), headerFile), '.')
 
         if self.natureLog == 'C':
-            bookTitle = re.search('og:title" content="([^"]*)"',cacheData).group(1)
-            bookDescription = u"Journal des visites à la cache " + bookTitle
+            bookDescription = u"Journal des visites à la cache " + self.bookTitle
             headerFile = None
 
         try:
@@ -497,12 +570,14 @@ class Logbook(object):
 
 if __name__ == '__main__':
     def usage():
-        print('Usage: python processLogs.py [-q|--quiet] geocaching_logs.html logbook.xml')
+        print('Usage: python processLogs.py [-q|--quiet] <input> logbook.xml')
         print('    or python processLogs.py [-q|--quiet] geocaching_logs.html logbook.html')
         print('')
-        print('   geocaching_logs.html')
-        print('       dump of the web page containing all you logs (HTML only)')
-        print('       sauvegarde de la page contenant tous vos logs (HTML uniquement)')
+        print('   <input>')
+        print('       local dump of a geocacher\'s logs page, a cache page or a trackable page')
+        print('       sauvegarde locale de la page des logs d\'un geocacher, d\'une cache ou d\'un trackable')
+        print('       wwww.geocaching.com to download the logs pages')
+        print('       wwww.geocaching.com pour télécharger les pages de logs')
         print('   logbook.xml')
         print('       content of all log entries with reference to pictures')
         print('       contenu de tous les logs avec reférences aux images')
@@ -613,7 +688,7 @@ if __name__ == '__main__':
 
         logbook = Logbook(verbose, warnings, startDate, endDate, refresh, excluded, included, user, password)
 
-        # optional phase : read previous logbook to add old logs
+        # optional initial phase : read previous logbook to add old logs
         if appendFile:
             if os.path.isfile(appendFile):
                 print("Logs from existing file %s"%appendFile)
@@ -624,6 +699,8 @@ if __name__ == '__main__':
             logbook.parseHTMLLogs(args[0])
         elif re.search(".xml", args[0], re.IGNORECASE):
             logbook.parseLogbook(args[0])
+        elif re.search("www.geocaching.com", args[0], re.IGNORECASE):
+            logbook.getAllLogs()
 
         logbook.generateLogbook(xmlFile)
 
