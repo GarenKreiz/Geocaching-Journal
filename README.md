@@ -28,12 +28,12 @@ These scripts were tested on Python 3.11.
 ## Usage
 
 * On the geocaching web site, verify that your date format preferences are in numerical form ("MM/DD/YY" not supported)
-* Logs : Save locally the content of the web page https://www.geocaching.com/my/logs.aspx?s=1 , for example in file **geocaching_logs.html**. Save it as a plain HTML file.
+* Logs : Save locally the content of the web page https://www.geocaching.com/my/logs.aspx?s=1 , for example in file **geocaching_logs.html**. Save it as a plain HTML file. The page can be directly fetched from www.geocaching.com
 * Trackables : Save the page https://www.geocaching.com/my/logs.aspx?s=2
 * Geocaches : on the cache webpage, scroll to the bottom to display all the logs, in the browser, use right-click on the page to inspect the source code, select the HTML tag and copy the outer content then paste it in a local file
 * Run the [processLogs.py](processLogs.py) script to generate an XML file for example **logbook.xml**.
 * It create a directory Logs to save the logs' HTML page before parsing them.
-* Authentication to the geocaching website is necessary to download logs (first use of processLogs, new logs or -r option)
+* Authentication to the geocaching website is necessary to download logs
 * Warning: the script may generate lots of accesses to www.geocaching.com without timeout. Check the License Agreement of this web site. It may be safe to run the program to get the log for small periods of time ("-s" and "-e" option)
 
 ```
@@ -67,7 +67,19 @@ $ python processLogs.py geocaching_logs.html logbook.html
 $ python xml2print.py -m mosaic.html logbook.xml logbook.html
 ```
 
-* Before launching the executable versions, copy the files [logbook_header.xml](logbook_header.xml) and [logbook.css](logbook.css) to the working directory and customize them.
+* To fetch recent logs from www.geocaching.com (temporary files geocaching_logs_tmp_*.html are created)
+
+```
+$ python processLogs.py -s YYYY/MM/DD www.geocaching.com logbook.xml
+```
+
+* To update the logbook file with the recent logs
+
+```
+$python processLogs.py -a logbook_previous.xml -s YYYY/MM/DD www.geocaching.com logbook_new.xml
+```
+
+* On Windows, after the installation, before launching the executable versions, copy the files [logbook_header.xml](logbook_header.xml) and [logbook.css](logbook.css) to the working directory and customize them.
 
 ```
 \ processLogs.exe geocaching_logs.html logbook.html
@@ -151,11 +163,12 @@ Ces scripts ont été testés avec Python 3.11
 
 * Vérifier les préférences du site geocaching : le format des dates doit être numérique (à l'exception du format "mm/jj/aa")
 * Logs : Faire une sauvegarde locale de la page contenant tous vos logs https://www.geocaching.com/my/logs.aspx?s=1 , par exemple dans le fichier **geocaching_logs.html**. Le format de la sauvegarde doit être de l'HTML simple.
+* Il est aussi possible de télécharger directement les derniers logs depuis le site www.geocaching.com
 * Trackables : Faire une sauvegarde de la page https://www.geocaching.com/my/logs.aspx?s=2
 * Géocaches : Afficher la page de la cache, scroller pour faire apparaître tous les logs, inspecter le code source (click droit), selectionner le tag HTML global et le copier (copie externe), coller le contenu dans un fichier local
 * Lancer le script [processLogs.py](processLogs.py) pour générer un fichier XML **logbook.xml**
 * Cela crée un répertoire **Logs** contenant un cache local des descriptions HTML des notes
-* La connexion au site Geocaching est nécessaire pour télécharger les notes (lancement initial, nouvelles notes ou option -r)
+* La connexion au site Geocaching est nécessaire pour télécharger les logs et les notes
 * Note: le script engrendre une rafale de requêtes vers www.geocaching.com sans temporisation. Vérifiez les clauses d'utilisation de ce site web. Il est recommandé de ne récupérer à chaque fois que les logs pour une courte période (options "-s" et "-e")
 
 ```
@@ -190,8 +203,20 @@ $ python processLogs.py geocaching_logs.html logbook.html
 $ python xml2print.py -m mosaic.html logbook.xml logbook.html
 ```
 
+* Pour télécharger les logs récents depuis le site www.geocaching.com (des fichiers temporaires geocaching_logs_tmp_*.html sont créés)
 
-* Avant d'exécuter les versions binaires des programmes (Windows), copier les fichiers [logbook_header.xml](logbook_header.xml) and [logbook.css](logbook.css) dans le répertoire de travail puis éventuellement en modifier le contenu pour paramétrer la génération.
+```
+$ python processLogs.py -s AAAA/MM/JJ www.geocaching.com logbook.xml
+```
+
+* Pour enrichir un logbook ancien avec les logs récents
+
+```
+$python processLogs.py -a logbook_previous.xml -s AAAA/MM/JJ www.geocaching.com logbook_new.xml
+```
+
+
+* Sous Windows, avant d'exécuter les versions binaires des programmes, copier les fichiers [logbook_header.xml](logbook_header.xml) and [logbook.css](logbook.css) dans le répertoire de travail puis éventuellement en modifier le contenu pour paramétrer la génération.
 
 ```
 \ processLogs.exe geocaching_logs.html logbook.html
@@ -258,6 +283,8 @@ Dans le fichier [logbook.css](logbook.css)
 
 # Releases - Versions
 
+* 1.8.0 : adapt to the changes of the logs pages (paginated)
+* 1.7.0 : small fixes
 * 1.6.0 : changes for log ids on the geocaching website
 * 1.5.0 : geocaching id and password stored in ~/.georc file
 * 1.4.0 : button to select some images that will be displayed as a list at the end of the page
